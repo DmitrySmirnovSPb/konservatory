@@ -1,0 +1,4 @@
+user;root
+password;12@preli@1961
+host;localhost
+port;3306

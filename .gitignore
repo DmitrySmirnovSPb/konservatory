@@ -1,0 +1,5 @@
+/.vscode
+/pyvenv.cfg
+/test.py
+/__pycache__
+data/~$Карта таблиц.xlsx
