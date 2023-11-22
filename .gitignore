@@ -2,4 +2,6 @@
 /pyvenv.cfg
 /test.py
 /__pycache__
-data/~$Карта таблиц.xlsx
+/.gitignore
+~$Карта таблиц.xlsx
+data/~$предвар.xlsx

@@ -1,89 +1,11 @@
 from DB_class import DB
+from importModul import get
 from excel_class import Excel
 from write_class import Write
 import re, os
 
-# Получить из строки первые цифры, если цифр нет позвращает 1.1 Если flag = True - считается только с начала строки
-def getNumber(data: str, flag = True):
-    match = r'\d{1,4}'
-    if flag: match = '^' + match
-    temp = re.findall(match, data)
-    if temp == []: return 1
-    return int(temp[0])
-# Добавить пробел между цифрой и буквой если этого пробела нет
-def addSpaceNumber(string: str):
-    test = '0123456789'
-    result = ''
-    endString = len(string)-1
-    for i in range(endString):
-        if string[i] in test and string[i+1] != ' ' and string[i+1] not in test:
-            result += string[i]+' '
-        else: result += string[i]
-    return result + string[endString]
-# Перезаписать записи в таблицу DB
-def addAnEntryToDB(data: list):
-    nameTable = data[0]
-    listTable = ['chapter','estimate_number','notes','justification','name_of_works_and_materials','contractor','dimension']
-    result = False
-    if nameTable in listTable:
-        db = DB()
-        db.clearTable(nameTable)
-        result = db.insert(nameTable, getData(data))
-    return result
-# Получить данные из ячейки с номером и названием раздела
-def getData(data: list):
-    temp = list()
-    match = r'Раздел \d*\. '
-    if data[0] == 'dimension' or data[0] == 'chapter':
-        tempAr = list(data[3])
-        for text in tempAr:
-            if data[0] == 'chapter':
-                num = getNumber(text, False)
-                text = re.sub(match, '', text, flags=re.I)
-            else: num = getNumber(text)
-            temp.append([text, num])
-        return [data[1],temp]
-    elif data[0] == 'contractor':
-        return [data[1],getContractor(list(data[3]))]
-    else:
-        return [data[1],list(data[3])]
-# Получить даннные из файла с подрядчиками    
-def getContractor(contractorList: list):
-    tempList = []
-    ws = Write('data\\contractor.txt')
-    data = ws.getDictionary(';')
-    for temp in contractorList:
-        if temp in data:
-            tempList.append([temp,data[temp]])
-    return tempList
-
-def getDataRow (rowData):
-    keys = list(rowData.keys())
-    for key in keys:
-        print(key)
-
-def setDataRow():
-    keys = ['chapter_id',
-            'number_in_order',
-            'estimate_id',
-            'estimate_number',
-            'justification_id',
-            'Year',
-            'notes_id',
-            'mini_header',
-            'grey',
-            'name_id',
-            'contractor_id',
-            'uom',
-            'value',
-            'cost',
-            'tbas',
-            'wpi',
-            'executive_documentation'
-            ]
 # Получаем текущую дерикторию скрипта
 rootLink = os.path.dirname(os.path.realpath(__file__))
-
 # Загружаем ссылку на файл Excel в переменную `link`
 link = rootLink + '\\data\\предвар.xlsx'
 # Получаем объект класса Excel
@@ -94,7 +16,17 @@ sheets = ExcelObj.getSheets()
 ExcelObj.initSheet(sheets[0])
 # Получаем все данные с листа записанные в формате словаря
 Content = ExcelObj.getContent()
-# перебираем даннные ишем начало и конец разделов.
+#####################################################################################################################
+#                                                                                                                   #
+# Структура результирующих данных                                                                                   #
+#   Cell:[str:Table name,list: List Column,list: List of exceptions, set: Data]                                     #
+#           Cell                номер столбца в файле Экселя сметы                                                  #
+#           Table name          Название таблице в базе данных MySQL                                                #
+#           List Column         Список ячеек которые заносятся в таблице Table name                                 #
+#           List of exceptions  Список исключений данных в ячейке столбца Cell кроме значение None                  #
+#           Data                Полученные данные в виде множества                                                  #
+#                                                                                                                   #
+#####################################################################################################################
 TotalResult = {1:['chapter',['name','number'],[],set()],
                2:['estimate_number',['estimate'],['Номер сметы'], set()],
                3:['notes',['note'],['Позиция сметного расчета / Номер'],set()],
@@ -119,7 +51,7 @@ for i in range(1, end):
                 if isinstance(Content[i][j], int) or isinstance(Content[i][j], float): continue
                 else:
                     if j == 7: cell_str = cell_str.lower()
-                    result = addSpaceNumber(cell_str)
+                    result = get.addSpaceNumber(cell_str)
             else: result = cell_str
             if result in listExceptions: continue
 
@@ -151,7 +83,7 @@ for i in range(1, end):
     if(typeCell == type(None) and type(Content[i][2]) == type(None)):
         if type(Content[i][3]) == str:
             if ' года' in Content[i][3]:
-                year = getNumber(Content[i][3])
+                year = get.getNumber(Content[i][3])
                 flag = False
                 continue
             else:
@@ -173,13 +105,16 @@ for i in range(1, end):
             if 'Итого сумма позиций' == Content[i][5]:
                 print(i,'Итого сумма позиций')
             elif 'Временные здания и сооружения' in Content[i][5]:
-                print(i, '1.44%')
+                print(i, '1.44% - Старт:')
             elif 'Зимнее удорожание' in Content[i][5]:
-                print(i, '1.41%')
+                print(i, '1.41% - Старт')
             else: print(i,'******* Столбец 5 (E) *******')
+            
 #            print(i,'год',year,'=>',firstNote,secondNote)
     # elif(typeCell == float): print('Тип FLOAT')
     elif typeCell == int:
+        startTbas = i
+        startWpi = i
         if Content[i][6] != None:
             where = '`name` = "' + str(Content[i][6]) + '"'
             temp = db.select('contractor',{'columns':['id'],'where':[where]})
@@ -198,10 +133,8 @@ for i in range(1, end):
         flag = False
     elif(typeCell == str):
         if 'Раздел' in str(Content[i][1]):
+            chapter_id = get.getChapterID(Content[i][1])
             flag = False
-            where = '`name` = "' + re.sub(r'Раздел \d*\. ', '', db.escapingQuotes(Content[i][1]) , flags=re.I) + '"'
-            result = db.select('chapter',{'columns':['id'],'where':[where]})
-            if result != False: chapter_id = result[0]
             year = 2014
             firstNote = ''
             secondNote = ''
@@ -211,4 +144,4 @@ for i in range(1, end):
         print(i,'год', year, '=>', str(firstNote) + ', ' + str(secondNote))
         flag = False
     if flag: print (i,'!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
-    if i >= 1000 : break
+    if i >= 2000 : break
