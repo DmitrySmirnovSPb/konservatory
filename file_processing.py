@@ -96,7 +96,7 @@ for i in range(1, end):
                     secondNote = '' if temp == None or temp == False or len(temp) <= 0 else str(temp[0])
                     flag = False
                 elif firstNote == '':
-                    where = '`note` = "' + str(Content[i][3]) + '"'
+                    where = '`note` = "' + db.escapingQuotes(str(Content[i][3])) + '"'
                     temp = db.select('notes',{'columns':['id'],'where':[where]})
                     secondNote = '' if temp == None or temp == False or len(temp) <= 0 else str(temp[0])
                     flag = False
@@ -116,23 +116,21 @@ for i in range(1, end):
         startTbas = i
         startWpi = i
         if Content[i][5] != None:
+            step = get.getContentCellFormatNumber(ExcelObj, i, 1)
             where = '`name` = "' + str(Content[i][6]) + '"'
             temp = db.select('contractor',{'columns':['id'],'where':[where]})
             contractor_id = 'null' if temp == None or temp == False or len(temp) <= 0 else temp[0]
-            print(i,f'**** {year} chapter_id {chapter_id} INIT({Content[i][1]}) format: {ExcelObj.getCellFormatNumber(i, 1)} contractor_id {contractor_id}, firstNote {firstNote}, secondNote {secondNote} ****')
+            print(i,f'**** {year} chapter_id {chapter_id} INIT({step}) contractor_id {contractor_id}, firstNote {firstNote}, secondNote {secondNote} ****')
         flag = False
         firstNote = ''
         secondNote = ''
     elif typeCell == float:
         if Content[i][5] != None:
-            nullStr = ''
-            get.getContentCellFormatNumber(ExcelObj, i, 1)
-            # for n in get.getContentCellFormatNumber(ExcelObj, i, 1): nullStr += n + '.'
-            string = nullStr[:-1]
+            step = get.getContentCellFormatNumber(ExcelObj, i, 1)
             where = '`name` = "' + str(Content[i][6]) + '"'
             temp = db.select('contractor',{'columns':['id'],'where':[where]})
             contractor_id = 'null' if temp == None or temp == False or len(temp) <= 0 else temp[0]
-        # print(i,f'**** {year} chapter_id {chapter_id} FLOAT({string}) format: {get.getContentCellFormatNumber(ExcelObj, i, 1)} contractor_id {contractor_id}, firstNote {firstNote}, secondNote {secondNote} ****')
+        print(i,f'**** {year} chapter_id {chapter_id} FLOAT({step}) contractor_id {contractor_id}, firstNote {firstNote}, secondNote {secondNote} ****')
 
         flag = False
     elif(typeCell == str):
@@ -148,4 +146,4 @@ for i in range(1, end):
         print(i,'год', year, '=>', str(firstNote) + ', ' + str(secondNote))
         flag = False
     if flag: print (i,'!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
-    if i >= 2000 : break
+    # if i >= 2000 : break

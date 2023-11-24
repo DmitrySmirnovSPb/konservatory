@@ -1,6 +1,6 @@
 from DB_class import DB
 from excel_class import Excel
-import re
+import re, json
 
 # Получить из строки первые цифры, если цифр нет позвращает 1.1 Если flag = True - считается только с начала строки
 def getNumber(data: str, flag = True):
@@ -71,21 +71,38 @@ def getContentCellFormatNumber(ExcelObj: Excel, r: int, c: int):
             valStr += '0'
         elif formatNum == '0.000' and int(value*100) == value*100:
             valStr += '00'
-    elif type(value) == int: return {1:str(value)}
-    lst = str(value).split('.')
+    elif type(value) == int: return json.dumps({1:str(value)})
+    lst = valStr.split('.')
     result = dict()
     i = 1
     for num in lst:
         result[i] = str(num)
         i += 1
-    print(result)
-    return result
+    return json.dumps(result)
 # Записать данные в итоговую строку
 def setDataRow(i,num):
-    keys = ['chapter_id','number_in_order','estimate_id','estimate_number','justification_id','Year','first_notes_id','first_notes_id','mini_header','grey','name_id','contractor_id','uom','value','cost','tbas','wpi','executive_documentation']
+    keys = [
+        'chapter_id',
+        'number_in_order',
+        'estimate_id',
+        'estimate_number',
+        'justification_id',
+        'Year',
+        'first_notes_id',
+        'second_notes_id',
+        'mini_header',
+        'grey',
+        'name_id',
+        'contractor_id',
+        'uom',
+        'value',
+        'cost',
+        'tbas',
+        'wpi',
+        'executive_documentation']
     for key in keys:
         match key:
-            case 'chapter_id':
+            case 'chapter_id':# y
                 result = chapter_id
             case 'number_in_order':
                 result = i[1]
@@ -95,13 +112,14 @@ def setDataRow(i,num):
                 result = getEstimateNumber(i)
             case 'justification_id':
                 result = getJustificationID(i)
-            case 'Year':
+            case 'Year':# y
                 result = year
-            case 'first_notes_id':
+            case 'first_notes_id':#y
                 result = firstNote
-            case 'second_notes_id':
+            case 'second_notes_id':# y
                 result = secondNote
             case 'grey':
+                i.getFontColorCell(r, c)
                 result = getGrey(i)
             case 'name_id':
                 result = getNameID(i)
