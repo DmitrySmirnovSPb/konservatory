@@ -1,4 +1,5 @@
 from DB_class import DB
+from excel_class import Excel
 import re
 
 # Получить из строки первые цифры, если цифр нет позвращает 1.1 Если flag = True - считается только с начала строки
@@ -61,8 +62,26 @@ def getChapterID(i):
     result = db.select('chapter',{'columns':['id'],'where':[where]})
     return result[0] if result != False else False
 
+def getContentCellFormatNumber(ExcelObj: Excel, r: int, c: int):
+    formatNum = ExcelObj.getCellFormatNumber(r, c)
+    value = ExcelObj.getCell(r,c)
+    valStr = str(value)
+    if type(value) == float:
+        if (formatNum == '0.00' and int(value*10) == value*10) or (formatNum == '0.000' and int(value*10) == value*10):
+            valStr += '0'
+        elif formatNum == '0.000' and int(value*100) == value*100:
+            valStr += '00'
+    elif type(value) == int: return {1:str(value)}
+    lst = str(value).split('.')
+    result = dict()
+    i = 1
+    for num in lst:
+        result[i] = str(num)
+        i += 1
+    print(result)
+    return result
 # Записать данные в итоговую строку
-def setDataRow(i):
+def setDataRow(i,num):
     keys = ['chapter_id','number_in_order','estimate_id','estimate_number','justification_id','Year','first_notes_id','first_notes_id','mini_header','grey','name_id','contractor_id','uom','value','cost','tbas','wpi','executive_documentation']
     for key in keys:
         match key:
@@ -100,4 +119,4 @@ def setDataRow(i):
                 result = get(i)
             case 'executive_documentation':
                 result = getExecutiveDocumentation(i)
-        resultSet[i][key] = result
+        resultSet[num][key] = result

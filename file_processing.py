@@ -115,20 +115,24 @@ for i in range(1, end):
     elif typeCell == int:
         startTbas = i
         startWpi = i
-        if Content[i][6] != None:
+        if Content[i][5] != None:
             where = '`name` = "' + str(Content[i][6]) + '"'
             temp = db.select('contractor',{'columns':['id'],'where':[where]})
             contractor_id = 'null' if temp == None or temp == False or len(temp) <= 0 else temp[0]
-            print(i,f'**** {year} chapter_id {chapter_id} INIT contractor_id {contractor_id}, firstNote {firstNote}, secondNote {secondNote} ****')
+            print(i,f'**** {year} chapter_id {chapter_id} INIT({Content[i][1]}) format: {ExcelObj.getCellFormatNumber(i, 1)} contractor_id {contractor_id}, firstNote {firstNote}, secondNote {secondNote} ****')
         flag = False
         firstNote = ''
         secondNote = ''
     elif typeCell == float:
-        if Content[i][6] != None:
+        if Content[i][5] != None:
+            nullStr = ''
+            get.getContentCellFormatNumber(ExcelObj, i, 1)
+            # for n in get.getContentCellFormatNumber(ExcelObj, i, 1): nullStr += n + '.'
+            string = nullStr[:-1]
             where = '`name` = "' + str(Content[i][6]) + '"'
             temp = db.select('contractor',{'columns':['id'],'where':[where]})
             contractor_id = 'null' if temp == None or temp == False or len(temp) <= 0 else temp[0]
-        print(i,f'**** {year} chapter_id {chapter_id} FLOAT contractor_id {contractor_id}, firstNote {firstNote}, secondNote {secondNote} ****')
+        # print(i,f'**** {year} chapter_id {chapter_id} FLOAT({string}) format: {get.getContentCellFormatNumber(ExcelObj, i, 1)} contractor_id {contractor_id}, firstNote {firstNote}, secondNote {secondNote} ****')
 
         flag = False
     elif(typeCell == str):

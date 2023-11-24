@@ -1,5 +1,5 @@
 from openpyxl import load_workbook, Workbook
-from openpyxl.styles import Font, Color
+from openpyxl.styles import Font, Color, numbers
 
 
 class Excel(object):
@@ -53,3 +53,6 @@ class Excel(object):
 # Возвращает цвет шрифта в ячейке в формате FF000000
     def getFontColorCell(self, r: int, c: int):
         return self.Sheet.cell(row=r, column=c).font.color.rgb
+# Возврщает числовой формат ячейки с координатами r и c
+    def getCellFormatNumber(self, r: int, c: int):
+        return self.Sheet.cell(row=r, column=c).number_format
