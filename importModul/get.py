@@ -2,7 +2,7 @@ from DB_class import DB
 from excel_class import Excel
 import re, json
 
-# Получить из строки первые цифры, если цифр нет позвращает 1.1 Если flag = True - считается только с начала строки
+# Получить из строки первые цифры, если цифр нет, то вращает 1.1 Если flag = True - считается только с начала строки
 def getNumber(data: str, flag = True):
     match = r'\d{1,4}'
     if flag: match = '^' + match
@@ -114,7 +114,7 @@ def setDataRow(i,num):
                 result = getJustificationID(i)
             case 'Year':# y
                 result = year
-            case 'first_notes_id':#y
+            case 'first_notes_id':# y
                 result = firstNote
             case 'second_notes_id':# y
                 result = secondNote

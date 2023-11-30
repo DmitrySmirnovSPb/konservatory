@@ -35,10 +35,7 @@ TotalResult = {1:['chapter',['name','number'],[],set()],
                6:['contractor',['name','full_name'],['3','Подрядчик'],{'ПОЛИТЕХСТРОЙ'}],
                7:['dimension',['name','multiplicity'],['Единица измерения'],set()]}
 
-# Опредиление максимального количество строк
-end = ExcelObj.maxRow
-
-for i in range(1, end):
+for i in Content:
     for j in range(1,ExcelObj.maxColumn + 1):
         if j in TotalResult:
             listExceptions = [None,'None'] + TotalResult[j][2]
@@ -76,7 +73,7 @@ chapter_id = 0
 db = DB()
 resultSet = set()
 
-for i in range(1, end):
+for i in Content:
     contractor_id = None
     flag = True
     typeCell = type(Content[i][1])
@@ -146,4 +143,4 @@ for i in range(1, end):
         print(i,'год', year, '=>', str(firstNote) + ', ' + str(secondNote))
         flag = False
     if flag: print (i,'!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
-    # if i >= 2000 : break
+    if i >= 2023 : break
