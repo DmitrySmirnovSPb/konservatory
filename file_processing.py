@@ -47,19 +47,21 @@ for i in Content:
             elif j == 3 or j == 7 :
                 if isinstance(Content[i][j], int) or isinstance(Content[i][j], float): continue
                 else:
-                    if j == 7: cell_str = cell_str.lower()
-                    result = get.addSpaceNumber(cell_str)
+                    if j == 7:
+                        cell_str = cell_str.lower()
+                        result = get.addSpaceNumber(cell_str)
+                    else: result = cell_str
             else: result = cell_str
             if result in listExceptions: continue
 
             TotalResult[j][3].add(result.strip())
 
-# for i in TotalResult:
-#     if i == 7: 
-#         for j in getData(TotalResult[i]):
-#             print(j)
-#     addAnEntryToDB(TotalResult[i])
-
+for i in TotalResult:
+    if i == 3: 
+    #     for j in TotalResult[i]:
+    #         print(j)
+        get.addAnEntryToDB(TotalResult[i])
+"""
 #############################################################################
 #           Занесение основных данных сметы в DB                            #
 #############################################################################
@@ -144,3 +146,4 @@ for i in Content:
         flag = False
     if flag: print (i,'!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
     if i >= 2023 : break
+    """
