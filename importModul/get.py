@@ -11,6 +11,26 @@ class getContent(object):
 
     CONST_YEAR = 2014
     CONST_LIST_TAB = ['chapter','estimate_number','notes','justification','name_of_works_and_materials','contractor','dimension']
+    CONST_KEYS = [
+        'chapter_id',
+        'number_in_order',
+        'estimate_id',
+        'estimate_number',
+        'justification_id',
+        'Year',
+        'first_notes_id',
+        'second_notes_id',
+        'mini_header',
+        'grey',
+        'name_id',
+        'contractor_id',
+        'uom',
+        'value',
+        'cost',
+        'tbas',
+        'wpi',
+        'executive_documentation'
+    ]
 
     def __init__(self, link = '/data/предвар.xlsx', nameDB = 'polytechstroy'):
         self.db = DB_class.DB(nameDB)
@@ -59,7 +79,7 @@ class getContent(object):
             return [data[1],self.getContractor(list(data[2]))]
         else:
             return [data[1],list(data[2])]
-    
+
     def getJSONNotes(self, ar : list, row: int):
         if self.Content[row][2] == None and type(self.Content[row][3]) == str:
             where = '`note` = "' + self.db.escapingQuotes(str(self.Content[row][3])) + '"'
@@ -92,6 +112,34 @@ class getContent(object):
         if '7F7F7F' in str(self.ExcelObj.getFontColorCell(row, column)).upper(): return True
         return False
 
+    def getContentCellFormatNumber(self, r: int, c: int):
+        formatNum = self.ExcelObj.getCellFormatNumber(r, c)
+        value = self.ExcelObj.getCell(r,c)
+        valStr = str(value)
+        if type(value) == float:
+            if (formatNum == '0.00' and int(value*10) == value*10) or (formatNum == '0.000' and int(value*10) == value*10):
+                valStr += '0'
+            elif formatNum == '0.000' and int(value*100) == value*100:
+                valStr += '00'
+        elif type(value) == int: return json.dumps({1:str(value)})
+        lst = valStr.split('.')
+        result = dict()
+        i = 1
+        for num in lst:
+            result[i] = str(num)
+            i += 1
+        return json.dumps(result)
+    
+    # Перезаписать записи в таблицу DB
+    def addAnEntryToDB(self, data: list):
+        nameTable = data[0]
+        listTable = ['chapter','estimate_number','notes','justification','name_of_works_and_materials','contractor','dimension']
+        result = False
+        if nameTable in listTable:
+            select.db.clearTable(nameTable)
+            result = self.db.insert(nameTable, getData(data))
+        return result
+
 # Добавить пробел между цифрой и буквой если этого пробела нет
 def addSpaceNumber(string: str):
     test = '0123456789'
@@ -102,91 +150,3 @@ def addSpaceNumber(string: str):
             result += string[i]+' '
         else: result += string[i]
     return result + string[endString]
-# Перезаписать записи в таблицу DB
-def addAnEntryToDB(data: list):
-    nameTable = data[0]
-    listTable = ['chapter','estimate_number','notes','justification','name_of_works_and_materials','contractor','dimension']
-    result = False
-    if nameTable in listTable:
-        db = DB()
-        db.clearTable(nameTable)
-        result = db.insert(nameTable, getData(data))
-    return result
-
-def getContentCellFormatNumber(ExcelObj: Excel, r: int, c: int):
-    formatNum = ExcelObj.getCellFormatNumber(r, c)
-    value = ExcelObj.getCell(r,c)
-    valStr = str(value)
-    if type(value) == float:
-        if (formatNum == '0.00' and int(value*10) == value*10) or (formatNum == '0.000' and int(value*10) == value*10):
-            valStr += '0'
-        elif formatNum == '0.000' and int(value*100) == value*100:
-            valStr += '00'
-    elif type(value) == int: return json.dumps({1:str(value)})
-    lst = valStr.split('.')
-    result = dict()
-    i = 1
-    for num in lst:
-        result[i] = str(num)
-        i += 1
-    return json.dumps(result)
-
-# Записать данные в итоговую строку
-def setDataRow(i,num):
-    keys = [
-        'chapter_id',
-        'number_in_order',
-        'estimate_id',
-        'estimate_number',
-        'justification_id',
-        'Year',
-        'first_notes_id',
-        'second_notes_id',
-        'mini_header',
-        'grey',
-        'name_id',
-        'contractor_id',
-        'uom',
-        'value',
-        'cost',
-        'tbas',
-        'wpi',
-        'executive_documentation']
-    for key in keys:
-        match key:
-            case 'chapter_id':# y
-                result = chapter_id
-            case 'number_in_order':
-                result = i[1]
-            case 'estimate_id':
-                result = getEstimateID(i[2])
-            case 'estimate_number':
-                result = getEstimateNumber(i)
-            case 'justification_id':
-                result = getJustificationID(i)
-            case 'Year':# y
-                result = year
-            case 'first_notes_id':# y
-                result = firstNote
-            case 'second_notes_id':# y
-                result = secondNote
-            case 'grey':
-                i.getFontColorCell(r, c)
-                result = getGrey(i)
-            case 'name_id':
-                result = getNameID(i)
-            case 'contractor_id':
-                result = getContractorID(i)
-            case 'uom':
-                result = getUOM(i)
-            case 'value':
-                result = getValue(i)
-            case 'cost':
-                result = getCost(i)
-            case 'tbas':
-                result = getTBAS(i)
-            case 'wpi':
-                result = get(i)
-            case 'executive_documentation':
-                result = getExecutiveDocumentation(i)
-        resultSet[num][key] = result
