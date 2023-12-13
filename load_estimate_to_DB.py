@@ -43,14 +43,14 @@ for row in gc.Content:
     # Фиксируем примечания к строкам сметы
     elif indNotes < row and type(gc.Content[row][3]) == str and gc.Content[row][2] == None:
         Notes = gc.getJSONNotes([],row)
-        if Notes['list'] =='[]' : print(row, Notes['list'], gc.Content[row][3])
         indNotes = Notes ['row']
         notes = Notes['list']
         continue
     # Фиксируем строки сметы в DB
     elif gc.Content[row][1] != None or gc.Content[row][2] != None:
         tempContent = dict()
-        if type(gc.Content[row][1]) == int : notes = ''
+        if type(gc.Content[row][1]) == int : notes, tbasWpi = '',False
+        else: tbasWpi = True
         tempContent['chapter_id'] = chapter_id
         tempContent['number_in_order'] = gc.getContentCellFormatNumber(row,1)
         if gc.Content[row][2] == None: textTemp = 'БН'
@@ -73,9 +73,9 @@ for row in gc.Content:
         tempContent['dimension'] = None if gc.Content[row][7] == None else gc.db.select('dimension',{'columns':['id'],'where':['`name` = "' + gc.db.escapingQuotes(str(gc.Content[row][7])) + '"']})[0]
         tempContent['value'] = gc.Content[row][8]
         tempContent['cost'] = gc.Content[row][11]
-        tempContent['tbas'] = True
-        tempContent['wpi'] = True
+        tempContent['tbas'] = tbasWpi
+        tempContent['wpi'] = tbasWpi
         tempContent['executive_documentation'] = None
         print(row,'=>',gc.db.insert('basic_estimate',[list(tempContent.keys()),[list(tempContent.values())]]))
 # Время выполнения скрипта
-print("--- %s seconds ---" % (time.time() - start_time))
+print("--- %s seconds ---" %(time.time() - start_time))

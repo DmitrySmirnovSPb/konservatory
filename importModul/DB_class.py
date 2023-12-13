@@ -39,7 +39,7 @@ class DB(object):
                 temp = ''
                 for cell in row:
                     temp += '%s, '
-                    data.append(self.escapingQuotes(cell))
+                    data.append(cell)
             else:
                 temp += '%s, '
                 data.append(row)
