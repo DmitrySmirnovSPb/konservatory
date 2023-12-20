@@ -111,7 +111,7 @@ class getContent(object):
     def isGrey(self, row:int, column: int):
         if '7F7F7F' in str(self.ExcelObj.getFontColorCell(row, column)).upper(): return True
         return False
-
+    # Определяет формат числа в ячейке и возвращает число в формате JSON
     def getContentCellFormatNumber(self, r: int, c: int):
         formatNum = self.ExcelObj.getCellFormatNumber(r, c)
         value = self.ExcelObj.getCell(r,c)

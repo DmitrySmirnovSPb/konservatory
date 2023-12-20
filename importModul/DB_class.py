@@ -1,6 +1,6 @@
-from write_class import Write
-from mysql.connector import connect, Error, errorcode
 import os
+from importModul.write_class import Write
+from mysql.connector import connect, Error, errorcode
 
 class DB(object):
 
@@ -53,8 +53,8 @@ class DB(object):
         self.mydb.commit()
         cursor.close()
         return emp_no
-    # Сделать выборку в таблице nameTable
-    def select(self, nameTable:str, query: dict):
+    def selectAll(self, nameTable:str, query: dict):
+        
         keys = query.keys()
         if 'columns' in keys and query['columns'] != '*' :
             columns = query['columns']
@@ -67,13 +67,15 @@ class DB(object):
             temp = strQuery[:-1]
             strQuery = temp + ' '
         strQuery += 'FROM `' + nameTable + '` '
+        if 'join' in keys:
+            strQuery += self.joinSelect(nameTable, query['join']) + ' '
         if 'where' in keys:
             strQuery += 'WHERE ' + self.where(query['where']) + ' '
         if 'order' in keys:
             strQuery += 'ORDER BY '
             for order in query['order']:
                 strQuery += '`' + order + '`'
-                if query['order'][order] == 'desc':
+                if not query['order'][order]:
                     strQuery += ' DESC'
                 strQuery += ','
             temp = strQuery[:-1]
@@ -84,7 +86,10 @@ class DB(object):
             result = cursor.fetchall()
         cursor.close()
         if result == []: return (None,)
-        return result[0]
+        return result
+    # Сделать выборку в таблице nameTable 1 строка
+    def select(self, nameTable:str, query: dict):
+        return self.selectAll(nameTable, query)[0]
     # Обновить строку в таблице nameTable
     def update(self, nameTable: str, data: dict):
         query = 'UPDATE `' + nameTable + '` SET '
@@ -128,6 +133,29 @@ class DB(object):
         temp1 = temp.replace('\\','\\\\')
         temp = temp1.replace("'","\\'")
         return temp.replace('"','\\"')
+    # Формирует запрос JOIN
+    def joinSelect(self, tn:str, data: dict):
+        result = ''
+        for key in data:
+            result += ' JOIN `'+ key + '` ON `' + tn +'`.`'+ data[key][0] + '` = `' + key + '`.`'+ data[key][1] + '`'
+        return result
+    # Получить список названия таблиц DB
+    def getListTables(self):
+        result = list()
+        cursor = self.mydb.cursor()
+        cursor.execute("SHOW TABLES FROM `"+self.DBName+"`")
+        for (table_name,) in cursor:
+            result.append(table_name)
+        return result
+    
+    def getListColumns(self, table_name: str):
+        result = list()
+        cursor = self.mydb.cursor()
+        query = f'SHOW COLUMNS FROM `{table_name}`'
+        cursor.execute(query)
+        for column in cursor:
+            result.append(column)
+        return result
 
     def __del__(self):
         self.mydb.close()
