@@ -1,11 +1,10 @@
-import sys
+import sys, re, json, os
 sys.path.append('C:/project/konservatory/data/')
 sys.path.append('C:/project/konservatory/importModul/')
 
-import DB_class
+from DB_class import DB
 import write_class
 from excel_class import Excel
-import re, json, os
 
 class getContent(object):
 
@@ -33,7 +32,7 @@ class getContent(object):
     ]
 
     def __init__(self, link = '/data/предвар.xlsx', nameDB = 'polytechstroy'):
-        self.db = DB_class.DB(nameDB)
+        self.db = DB(nameDB)
         self.globalLink = os.getcwd()
         self.Content = self.getCont(link)
 
@@ -129,7 +128,7 @@ class getContent(object):
             result[i] = str(num)
             i += 1
         return json.dumps(result)
-    
+
     # Перезаписать записи в таблицу DB
     def addAnEntryToDB(self, data: list):
         nameTable = data[0]
@@ -139,6 +138,24 @@ class getContent(object):
             select.db.clearTable(nameTable)
             result = self.db.insert(nameTable, getData(data))
         return result
+
+    def getLS(self, string: str, match: list or str):
+        if type(match) == str: return re.sub(match, '', string,flags=re.I)
+        else:
+            result = string
+            for m in match:
+                result = self.getLS(result, m)
+        return result
+    
+    def getSelect(self, table, where):
+        result = self.db.select(table, where)
+        if result != None: return result
+
+        return self.setDB(table)
+    
+    def setDB(self, table):
+        print(table)
+        exit(1)
 
 # Добавить пробел между цифрой и буквой если этого пробела нет
 def addSpaceNumber(string: str):

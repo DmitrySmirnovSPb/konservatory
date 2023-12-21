@@ -1,13 +1,13 @@
 import sys, os, json, time
 sys.path.append(os.getcwd() + '/')
 
-from importModul import get as GC
+from importModul.get import getContent
 
 if __name__ == '__main__':
 
     start_time = time.time()
 
-    gc = GC.getContent()
+    gc = getContent()
     gc.db.clearTable('basic_estimate')
     chapter_id = 0
     notes = ''
@@ -58,12 +58,12 @@ if __name__ == '__main__':
             tempContent['number_in_order'] = gc.getContentCellFormatNumber(row,1)
             if gc.Content[row][2] == None: textTemp = 'БН'
             else: textTemp = str(gc.Content[row][2])
-            where = '`estimate` = "' + gc.db.escapingQuotes(textTemp) + '"'
+            where = '`estimate` = "' + gc.db.escapingQuotes(gc.getLS(textTemp, [r'ЛС ',r' Поз(.)*'])) + '"'
             tempContent['estimate_id'] = gc.db.select('estimate_number',{'columns':['id'],'where':[where]})[0]
             tempContent['estimate_number'] = gc.Content[row][3]
             getWhere = gc.db.escapingQuotes(str(gc.Content[row][4]))
             if type(getWhere) == str: getWhere = '"'+getWhere+'"'
-            elif getWhere == None: getWhere = 'NULL'
+            elif getWhere == None: getWhere = '""'
             where = '`position` = ' + str(getWhere)
             tempContent['justification_id'] = gc.db.select('justification',{'columns':['id'],'where':[where]})[0]
             tempContent['Year'] = year

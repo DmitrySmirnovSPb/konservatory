@@ -24,8 +24,8 @@ class DB(object):
         return result
     # Новая запись в таблицу nameTable
     def insert(self, nameTable:str, rowData:list):
-
-        temp = "INSERT INTO `" + nameTable + "` ("        # Начало составления строи команды INSERT
+        # Начало составления строи команды INSERT
+        temp = "INSERT INTO `" + nameTable + "` ("
         count = 0
         for cellName in rowData[0]:
             temp +='`'+str(cellName) + '`, '
@@ -80,7 +80,7 @@ class DB(object):
                 strQuery += ','
             temp = strQuery[:-1]
             strQuery = temp
-        # print(strQuery)
+        print(strQuery)
         with self.mydb.cursor() as cursor:
             cursor.execute(strQuery)
             result = cursor.fetchall()
@@ -147,7 +147,7 @@ class DB(object):
         for (table_name,) in cursor:
             result.append(table_name)
         return result
-    
+
     def getListColumns(self, table_name: str):
         result = list()
         cursor = self.mydb.cursor()
