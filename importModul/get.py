@@ -108,8 +108,8 @@ class getContent(object):
 
     # Определяется ли цвет шрифта в ячейке в строке row и столбце column FF7F7F7F
     def isGrey(self, row:int, column: int):
-        if '7F7F7F' in str(self.ExcelObj.getFontColorCell(row, column)).upper(): return True
-        return False
+        if '7F7F7F' in str(self.ExcelObj.getFontColorCell(row, column)).upper(): return 1
+        return 0
     # Определяет формат числа в ячейке и возвращает число в формате JSON
     def getContentCellFormatNumber(self, r: int, c: int):
         formatNum = self.ExcelObj.getCellFormatNumber(r, c)
@@ -157,13 +157,13 @@ class getContent(object):
         print(table)
         exit(1)
 
-# Добавить пробел между цифрой и буквой если этого пробела нет
-def addSpaceNumber(string: str):
-    test = '0123456789'
-    result = ''
-    endString = len(string)-1
-    for i in range(endString):
-        if string[i] in test and string[i+1] != ' ' and string[i+1] not in test:
-            result += string[i]+' '
-        else: result += string[i]
-    return result + string[endString]
+    # Добавить пробел между цифрой и буквой если этого пробела нет
+    def addSpaceNumber(string: str):
+        test = '0123456789'
+        l = ',.'
+        result = ''
+        for i in range(len(string)-1):
+            if string[i] in test and string[i+1] != ' ' and (string[i+1] not in test or string[i+1] not in l):
+                result += string[i]+' '
+            else: result += string[i]
+        return result + string[endString]

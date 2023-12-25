@@ -22,8 +22,7 @@ if __name__ == '__main__':
         'Расчетная стоимость единицы',
         'Всего на физобъем',
         'Стоимость единицы',
-        'Всего на физобъем',
-        'в том числе материалы'
+        'Всего на физобъем'
     ]
 
     for row in gc.Content:
@@ -80,5 +79,6 @@ if __name__ == '__main__':
             tempContent['wpi'] = tbasWpi
             tempContent['executive_documentation'] = None
             print(row,'=>',gc.db.insert('basic_estimate',[list(tempContent.keys()),[list(tempContent.values())]]))
+            
     # Время выполнения скрипта
     print("--- %s seconds ---" %(time.time() - start_time))
