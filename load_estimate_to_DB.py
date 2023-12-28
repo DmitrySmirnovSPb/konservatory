@@ -55,7 +55,7 @@ if __name__ == '__main__':
             else: tbasWpi = True
             tempContent['chapter_id'] = chapter_id
             tempContent['number_in_order'] = gc.getContentCellFormatNumber(row,1)
-            if gc.Content[row][2] == None: textTemp = 'БН'
+            if gc.Content[row][2] == None: textTemp = ''
             else: textTemp = str(gc.Content[row][2])
             where = '`estimate` = "' + gc.db.escapingQuotes(gc.getLS(textTemp, [r'ЛС ',r' Поз(.)*'])) + '"'
             tempContent['estimate_id'] = gc.db.select('estimate_number',{'columns':['id'],'where':[where]})[0]
