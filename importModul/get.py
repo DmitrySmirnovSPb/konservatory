@@ -11,19 +11,18 @@ class getContent(object):
     CONST_YEAR = 2014
     CONST_LIST_TAB = ['chapter','estimate_number','notes','justification','name_of_works_and_materials','contractor','dimension']
     CONST_KEYS = [
+        'id',
         'chapter_id',
         'number_in_order',
         'estimate_id',
         'estimate_number',
         'justification_id',
         'Year',
-        'first_notes_id',
-        'second_notes_id',
-        'mini_header',
+        'notes',
         'grey',
         'name_id',
         'contractor_id',
-        'uom',
+        'dimension',
         'value',
         'cost',
         'tbas',
@@ -106,10 +105,12 @@ class getContent(object):
                 tempList.append([temp,data[temp]])
         return tempList
 
-    # Определяется ли цвет шрифта в ячейке в строке row и столбце column FF7F7F7F
-    def isGrey(self, row:int, column: int):
-        if '7F7F7F' in str(self.ExcelObj.getFontColorCell(row, column)).upper(): return 1
-        return 0
+    # Определяется ли цвет шрифта в строке row (FF7F7F7F)
+    def isGrey(self, row:int):
+        for i in self.Content(row):
+            if i != None:
+                if '7F7F7F' in str(self.ExcelObj.getFontColorCell(row, column)).upper(): return 1
+                else: return 0
     # Определяет формат числа в ячейке и возвращает число в формате JSON
     def getContentCellFormatNumber(self, r: int, c: int):
         formatNum = self.ExcelObj.getCellFormatNumber(r, c)
@@ -132,9 +133,8 @@ class getContent(object):
     # Перезаписать записи в таблицу DB
     def addAnEntryToDB(self, data: list):
         nameTable = data[0]
-        listTable = ['chapter','estimate_number','notes','justification','name_of_works_and_materials','contractor','dimension']
         result = False
-        if nameTable in listTable:
+        if nameTable in self.CONST_LIST_TAB:
             select.db.clearTable(nameTable)
             result = self.db.insert(nameTable, getData(data))
         return result
@@ -147,15 +147,28 @@ class getContent(object):
                 result = self.getLS(result, m)
         return result
     
-    def getSelect(self, table, where):
-        result = self.db.select(table, where)
+    def getSelect(self, table: str, date: str):
+        ListColumns = {
+            'chapter':['name',r'Раздел \d*\. '],
+            'estimate_number':['estimate',[r'ЛС ',r' Поз(.)*']],
+            'notes':['note',None],
+            'justification':['position', None],
+            'name_of_works_and_materials':['name', None],
+            'contractor':['name',None],
+            'dimension':['name',None]
+        }
+        whereTemp = self.db.escapingQuotes(date if ListColumns[table][1] == None else self.getLS(date, ListColumns[table][1]))
+        where = '`'+ListColumns[table][0]+'` = "' + swhereTemp + '"'
+        result = self.db.select(table, {'where':where, 'columns':'id'})
         if result != None: return result
-
-        return self.setDB(table)
+        return self.db.insert(table, [[ListColumns[table][0]],[whereTemp]])
     
-    def setDB(self, table):
-        print(table)
-        exit(1)
+    def getDataDB(self, table, row, column):
+        temp = str(self.Content[row,column]) if self.Content[row,column] != None else ''
+        if table == 'grey': return self.isGrey(row)
+        elif table == 'number_in_order': return self.getContentCellFormatNumber(row,1)
+        elif table == '': return temp
+        return self.getSelect(table, temp)
 
     # Добавить пробел между цифрой и буквой если этого пробела нет
     def addSpaceNumber(string: str):
