@@ -54,7 +54,6 @@ class DB(object):
         cursor.close()
         return emp_no
     def selectAll(self, nameTable:str, query: dict):
-        
         keys = query.keys()
         if 'columns' in keys and query['columns'] != '*' :
             columns = query['columns']
@@ -80,7 +79,7 @@ class DB(object):
                 strQuery += ','
             temp = strQuery[:-1]
             strQuery = temp
-        print(strQuery)
+        # print(strQuery)
         with self.mydb.cursor() as cursor:
             cursor.execute(strQuery)
             result = cursor.fetchall()
@@ -89,7 +88,7 @@ class DB(object):
         return result
     # Сделать выборку в таблице nameTable 1 строка
     def select(self, nameTable:str, query: dict):
-        return self.selectAll(nameTable, query)[0]
+        return self.selectAll(nameTable, query)[0][0]
     # Обновить строку в таблице nameTable
     def update(self, nameTable: str, data: dict):
         query = 'UPDATE `' + nameTable + '` SET '

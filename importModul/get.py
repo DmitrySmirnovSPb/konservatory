@@ -39,7 +39,7 @@ class getContent(object):
     def getChapterID(self, i):
         where = '`name` = "' + re.sub(r'Раздел \d*\. ', '', self.db.escapingQuotes(i) , flags=re.I) + '"'
         result = self.db.select('chapter',{'columns':['id'],'where':[where]})
-        return result[0] if result != False else False
+        return result if result != False else False
 
     # Опредиление максимального количество строк
     # self.ExcelObj.maxRow
@@ -81,7 +81,7 @@ class getContent(object):
     def getJSONNotes(self, ar : list, row: int):
         if self.Content[row][2] == None and type(self.Content[row][3]) == str:
             where = '`note` = "' + self.db.escapingQuotes(str(self.Content[row][3])) + '"'
-            temp = self.db.select('notes',{'columns':['id'],'where':[where]})[0]
+            temp = self.db.select('notes',{'columns':['id'],'where':[where]})
             row += 1
             ar.append(temp)
             return self.getJSONNotes(ar, row)
@@ -107,9 +107,9 @@ class getContent(object):
 
     # Определяется ли цвет шрифта в строке row (FF7F7F7F)
     def isGrey(self, row:int):
-        for i in self.Content(row):
-            if i != None:
-                if '7F7F7F' in str(self.ExcelObj.getFontColorCell(row, column)).upper(): return 1
+        for i in self.Content[row]:
+            if self.Content[row][i] != None:
+                if '7F7F7F' in str(self.ExcelObj.getFontColorCell(row, i)).upper(): return 1
                 else: return 0
     # Определяет формат числа в ячейке и возвращает число в формате JSON
     def getContentCellFormatNumber(self, r: int, c: int):
@@ -158,13 +158,14 @@ class getContent(object):
             'dimension':['name',None]
         }
         whereTemp = self.db.escapingQuotes(date if ListColumns[table][1] == None else self.getLS(date, ListColumns[table][1]))
-        where = '`'+ListColumns[table][0]+'` = "' + swhereTemp + '"'
-        result = self.db.select(table, {'where':where, 'columns':'id'})
+        where = '`'+ListColumns[table][0]+'` = "' + whereTemp + '"'
+        result = self.db.select(table, {'where':[where], 'columns':['id']})
         if result != None: return result
         return self.db.insert(table, [[ListColumns[table][0]],[whereTemp]])
     
     def getDataDB(self, table, row, column):
-        temp = str(self.Content[row,column]) if self.Content[row,column] != None else ''
+        if column == 11 or column == 8: temp = self.Content[row][column]
+        else: temp = str(self.Content[row][column]) if self.Content[row][column] != None else ''
         if table == 'grey': return self.isGrey(row)
         elif table == 'number_in_order': return self.getContentCellFormatNumber(row,1)
         elif table == '': return temp

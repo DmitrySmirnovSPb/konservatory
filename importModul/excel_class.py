@@ -52,7 +52,12 @@ class Excel(object):
         return self.Sheet[coordinates].value
 # Возвращает цвет шрифта в ячейке в формате FF000000
     def getFontColorCell(self, r: int, c: int):
-        return self.Sheet.cell(row=r, column=c).font.color.rgb
+        try:
+            result = self.Sheet.cell(row=r, column=c).font.color.rgb
+        except AttributeError as e:
+            print(e)
+            result = '000000'
+        finally: return result
 # Возврщает числовой формат ячейки с координатами r и c
     def getCellFormatNumber(self, r: int, c: int):
         return self.Sheet.cell(row=r, column=c).number_format
