@@ -30,9 +30,13 @@ class getContent(object):
         'executive_documentation'
     ]
 
-    def __init__(self, link = '/data/предвар.xlsx', nameDB = 'polytechstroy'):
+    def __init__(self, link = '/data/предвар.xlsx', nameDB = 'polytechstroy', globalLink = False, Sheet = 'Лист1'):
         self.db = DB(nameDB)
-        self.globalLink = os.getcwd()
+        self.Sheet = Sheet
+        if globalLink == False:
+            self.globalLink = os.getcwd()
+        else:
+            self.globalLink = globalLink
         self.Content = self.getCont(link)
 
     # Получть ID по названию раздела
@@ -50,8 +54,15 @@ class getContent(object):
         linkFile = self.globalLink + link
         # Получаем объект класса Excel
         self.ExcelObj = Excel(linkFile)
-        # Инициируем нужный нам лист (Первый лист)
-        self.ExcelObj.initSheet(self.ExcelObj.getSheets()[0])
+        # Инициируем нужный нам лист (self.Sheet) если лист не найден, инициируется первыйлист
+        Sheets = self.ExcelObj.getSheets()
+        if self.Sheet in Sheets:
+            index = Sheets.index(self.Sheet)
+        else:
+            index = 0
+            print('Лист "'+str(self.Sheet)+'" в файле "'+str(link)+'" не найден!')
+            print('Основным листом назначен: "'+str(Sheets[index])+'"')
+        self.ExcelObj.initSheet(Sheets[index])
         # Получаем все данные с листа записанные в формате словаря
         return self.ExcelObj.getContent()
 
