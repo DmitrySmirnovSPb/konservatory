@@ -51,9 +51,9 @@ class getContent(object):
     # Загрузка всего контента с 1 листа Excel файла в переменную
     def getCont(self, link: str):
         # Получаем текущую дерикторию нахождения файла
-        linkFile = self.globalLink + link
+        self.globalLink = self.globalLink + link
         # Получаем объект класса Excel
-        self.ExcelObj = Excel(linkFile)
+        self.ExcelObj = Excel(self.globalLink)
         # Инициируем нужный нам лист (self.Sheet) если лист не найден, инициируется первыйлист
         Sheets = self.ExcelObj.getSheets()
         if self.Sheet in Sheets:
