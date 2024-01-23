@@ -63,7 +63,7 @@ class CC_Report(getContent):
 
     def listKeysAndValues(self, exceptions = ['db', 'ExcelObj', 'Content'], pt = False):
         if pt : result = dict()
-        for key in list(self.__dict__.keys()):
+        for key in self.__dict__.keys():
             if key in exceptions: continue
             temp = getattr(self, key)
             if not pt : print(key,'-->', temp)
