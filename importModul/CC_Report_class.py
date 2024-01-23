@@ -63,7 +63,7 @@ class CC_Report(getContent):
 
     def listKeysAndValues(self, exceptions = ['db', 'ExcelObj', 'Content'], pt = False):
         if pt : result = dict()
-        for key in list(self.__dict__.keys()):
+        for key in self.__dict__.keys():
             if key in exceptions: continue
             temp = getattr(self, key)
             if not pt : print(key,'-->', temp)
@@ -72,7 +72,10 @@ class CC_Report(getContent):
 
     def getBuildingAxes(self, string):
         result = []
-        listMtch = [r'\d+\-?\d?\s?[\\/и]\s?\w/?Н?-?\w?/?Н?', r'\w/?Н?-?\w?/?Н?\s?[\\/и]\s?\d+\-?\d?']
+        listMtch = [
+            r'\d{,2}[ ]?-?[ ]?\d{1,2}[ ]?[/и\\][ ]?[а-яА-Я]?/?Н?[ ]?-?[ ]?[а-яА-Я]/?Н?',
+            r'[а-яА-Я]?/?Н?[ ]?-?[ ]?[а-яА-Я]/?Н?[ ]?[/и\\][ ]?\d{,2}[ ]?-?[ ]?\d{1,2}'
+        ]
         for mat in listMtch:
             temp = re.findall(mat, string)
             if len(temp) > 0:
