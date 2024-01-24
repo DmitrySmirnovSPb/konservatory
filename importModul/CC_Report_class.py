@@ -70,18 +70,36 @@ class CC_Report(getContent):
             else: result[key] = temp
         if pt : return result
 
+    def getContractor(self, string):
+        listString = string.split('«')
+        temp = list()
+        for i in listString:
+            if "»" in i:
+                for j in i.split('»'):
+                    temp.append(j.strip())
+            else: temp.append(i.strip())
+        print(temp)
+        string = string.lower().replace('\n',' ').replace('. ','.').replace('«','').replace('»','').replace('-центр','').replace('-инжиниринг','')
+        # listString = string.split(' ')
+        # id = self.db.select('people',{'where':['`l_name` = "'+listString[2]+'"'],'columns':['id']})
+        # if id == None:
+        #     idContr = self.db.select('contractor',{'where':['`name` = "'+listString[1]+'"'],'columns':['id']})
+        #     print(idContr)
+        #     pass
+        # print(listString, 'id = ', id)
+
     def getBuildingAxes(self, string):
         result = []
         listMtch = [
-            r'\d{,2}[ ]?-?[ ]?\d{1,2}[ ]?[/и\\][ ]?[а-яА-Я]?/?Н?[ ]?-?[ ]?[а-яА-Я]/?Н?',
-            r'[а-яА-Я]?/?Н?[ ]?-?[ ]?[а-яА-Я]/?Н?[ ]?[/и\\][ ]?\d{,2}[ ]?-?[ ]?\d{1,2}'
+            r'\d{,2}[ ]?-?[ ]?\d{1,2}[ ]?[/и\\]{1}[ ]?[а-яА-Я]{0,1}/?Н?[ ]?-?[ ]?[а-яА-Я]{1}/?Н?',
+            r'[а-яА-Я]{1}/?Н?[ ]?-?[ ]?[а-яА-Я]{0,1}/?Н?[ ]?[/и\\]{1}[ ]?\d{,2}[ ]?-?[ ]?\d{1,2}'
         ]
         for mat in listMtch:
             temp = re.findall(mat, string)
             if len(temp) > 0:
                 for f in temp: result.append(f)
         return result
-        # matchStr = 
+        # matchStr =
         # F = [
             # 'Производство работ по монтажу медного балкона в/о 35-37 / Я',
             # 'Производство работ по монтажу медного балкона в/о К-С/ 19-21',

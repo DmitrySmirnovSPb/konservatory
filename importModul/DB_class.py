@@ -88,7 +88,10 @@ class DB(object):
         return result
     # Сделать выборку в таблице nameTable 1 строка
     def select(self, nameTable:str, query: dict):
-        return self.selectAll(nameTable, query)[0][0]
+        result = self.selectAll(nameTable, query)
+        if result == False: return False
+        if result[0] == None: return None
+        return result[0][0]
     # Обновить строку в таблице nameTable
     def update(self, nameTable: str, data: dict):
         query = 'UPDATE `' + nameTable + '` SET '
