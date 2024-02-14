@@ -78,33 +78,21 @@ class CC_Report(getContent):
                 for j in i.split('»'):
                     temp.append(j.strip())
             else: temp.append(i.strip())
-        print(temp)
-        string = string.lower().replace('\n',' ').replace('. ','.').replace('«','').replace('»','').replace('-центр','').replace('-инжиниринг','')
-        # listString = string.split(' ')
-        # id = self.db.select('people',{'where':['`l_name` = "'+listString[2]+'"'],'columns':['id']})
-        # if id == None:
-        #     idContr = self.db.select('contractor',{'where':['`name` = "'+listString[1]+'"'],'columns':['id']})
-        #     print(idContr)
-        #     pass
-        # print(listString, 'id = ', id)
+        # print(temp)
+        string = string.lower().replace('\n',' ').replace('. ','.').replace('«','').replace('»','').replace('-центр','').replace('-инжиниринг','').replace('"','')
+        listString = list(string.split(' '))
+        if '' in listString: listString.remove('')
+        id = self.db.select('people',{'where':['`l_name` = "'+listString[2]+'"'],'columns':['id']})
+        if id == None:
+            idContr = self.db.select('contractor',{'where':['`name` = "'+listString[1]+'"'],'columns':['id']})
+            # print('NONE',idContr)
+        return id
 
     def getBuildingAxes(self, string):
         result = []
-        listMtch = [
-            r'\d{,2}[ ]?-?[ ]?\d{1,2}[ ]?[/и\\]{1}[ ]?[а-яА-Я]{0,1}/?Н?[ ]?-?[ ]?[а-яА-Я]{1}/?Н?',
-            r'[а-яА-Я]{1}/?Н?[ ]?-?[ ]?[а-яА-Я]{0,1}/?Н?[ ]?[/и\\]{1}[ ]?\d{,2}[ ]?-?[ ]?\d{1,2}'
-        ]
-        for mat in listMtch:
-            temp = re.findall(mat, string)
-            if len(temp) > 0:
-                for f in temp: result.append(f)
+        mat = r' \d{,2}[ ]?-?[ ]?\d{1,2}[ ]?[\\/]{1}[ ]?[а-яА-Я]{0,1}_?Н?[ ]?-?[ ]?[а-яА-Я]{1}_?Н?[,\s]| \d{,2}[ ]?-?[ ]?\d{1,2}[ ]?[\\/]{1}[ ]?[а-яА-Я]{0,1}_?Н?[ ]?-?[ ]?[а-яА-Я]{1}_?Н?$| [а-яА-Я]{1}_?Н?[ ]?-?[ ]?[а-яА-Я]{0,1}_?Н?[ ]?[\\/]{1}[ ]?\d{,2}[ ]?-?[ ]?\d{1,2}[,\s]| [а-яА-Я]{1}_?Н?[ ]?-?[ ]?[а-яА-Я]{0,1}_?Н?[ ]?[\\/]{1}[ ]?\d{,2}[ ]?-?[ ]?\d{1,2}$'
+        
+        temp = re.findall(mat, string)
+        if len(temp) > 0:
+            for f in temp: result.append(f)
         return result
-        # matchStr =
-        # F = [
-            # 'Производство работ по монтажу медного балкона в/о 35-37 / Я',
-            # 'Производство работ по монтажу медного балкона в/о К-С/ 19-21',
-            # 'Производство работ по монтажу медного балкона в/о 35/Я',
-            # 'Производство работ по монтажу медного балкона в/о А-Б / 19',
-            # 'Производство работ по монтажу медного балкона в/о М/Н-С / 18',
-            # ]
-        # return re.findall(matchStr, string)
