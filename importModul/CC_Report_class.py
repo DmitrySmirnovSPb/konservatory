@@ -90,9 +90,34 @@ class CC_Report(getContent):
 
     def getBuildingAxes(self, string):
         result = []
-        mat = r'[ ,]\d{,2}[ ]?-?[ ]?\d{1,2}[ ]?[\\/]{1}[ ]?[а-яА-Я]{0,1}_?Н?[ ]?-?[ ]?[а-яА-Я]{1}_?Н?|[ ,]\d{,2}[ ]?-?[ ]?\d{1,2}[ ]?[\\/]{1}[ ]?[а-яА-Я]{0,1}_?Н?[ ]?-?[ ]?[а-яА-Я]{1}_?Н?$|[ ,][а-яА-Я]{1}_?Н?[ ]?-?[ ]?[а-яА-Я]{0,1}_?Н?[ ]?[\\/]{1}[ ]?\d{,2}[ ]?-?[ ]?\d{1,2}|[ ,][а-яА-Я]{1}_?Н?[ ]?-?[ ]?[а-яА-Я]{0,1}_?Н?[ ]?[\\/]{1}[ ]?\d{,2}[ ]?-?[ ]?\d{1,2}$'
+        mat = r'[ ,(]\d{,2}[ ]?-?[ ]?\d{1,2}[ ]?[\\/и]{1}[ ]?[А-Я]{0,1}_?Н?[ ]?-?[ ]?[А-Я]{1}_?Н?|[ ,(]\d{,2}[ ]?-?[ ]?\d{1,2}[ ]?[\\/и]{1}[ ]?[А-Я]{0,1}_?Н?[ ]?-?[ ]?[А-Я]{1}_?Н?$|[ ,(][А-Я]{1}_?Н?[ ]?-?[ ]?[А-Я]{0,1}_?Н?[ ]?[\\/и]{1}[ ]?\d{,2}[ ]?-?[ ]?\d{1,2}|[ ,(][А-Я]{1}_?Н?[ ]?-?[ ]?[А-Я]{0,1}_?Н?[ ]?[\\/и]{1}[ ]?\d{,2}[ ]?-?[ ]?\d{1,2}$'
         
         temp = re.findall(mat, string)
         if len(temp) > 0:
-            for f in temp: result.append(re.sub(r',','', str(f)))
+            for f in temp: result.append(re.sub(r'[,(]','', str(f)))
+        return result
+    
+    def getAxes(self, splitList):
+        st = list()
+        for string in self.clearList(splitList):
+            st.append(self.sortAxes(string.split('/')))
+        return json.dumps(st)
+
+    def clearList(self, lsts: list):
+        result = list()
+        for lst in lsts:
+            result.append(lst.replace('и','/').replace(' ',''))
+        return result
+
+    def sortAxes(self, lst: list): # Сортировка осей, приведение к общему стандарту.
+        result = list()
+        if not any(c.isdigit() for c in lst[0]):    # Опредиляем первую пару на наличие цифры в ней
+            lst[0], lst[1] = lst[1], lst[0]             # Перестановка в случае если нервая пара не содержит цифру
+        for step in lst:
+            slst = step.split('-')
+            if len(slst) > 1:
+                if slst[0] > slst[1]:
+                    slst[0], slst[1] = slst[1], slst[0]
+                result.append(slst[0]+'-'+slst[1])
+            else:result.append(slst[0])
         return result
