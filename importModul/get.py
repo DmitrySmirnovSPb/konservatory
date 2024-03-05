@@ -38,10 +38,11 @@ class getContent(object):
         else:
             self.globalLink = globalLink
         self.Content = self.getCont(link)
+        self.match = r'Раздел \d+\. '
 
     # Получть ID по названию раздела
     def getChapterID(self, i):
-        where = '`name` = "' + re.sub(r'Раздел \d*\. ', '', self.db.escapingQuotes(i) , flags=re.I) + '"'
+        where = '`name` = "' + re.sub(self.match, '', self.db.escapingQuotes(i) , flags=re.I) + '"'
         result = self.db.select('chapter',{'columns':['id'],'where':[where]})
         return result if result != False else False
 
@@ -74,13 +75,12 @@ class getContent(object):
 
     def getData(self, data: list):
         temp = list()
-        match = r'Раздел \d*\. '
         if data[0] == 'dimension' or data[0] == 'chapter':
             tempAr = list(data[3])
             for text in tempAr:
                 if data[0] == 'chapter':
                     num = self.getNumber(text, False)
-                    text = re.sub(match, '', text, flags=re.I)
+                    text = re.sub(self.match, '', text, flags=re.I)
                 else: num = getNumber(text)
                 temp.append([text, num])
             return [data[1],temp]
@@ -160,7 +160,7 @@ class getContent(object):
     
     def getSelect(self, table: str, date: str):
         ListColumns = {
-            'chapter':['name',r'Раздел \d*\. '],
+            'chapter':['name',self.match],
             'estimate_number':['estimate',[r'ЛС ',r' Поз(.)*']],
             'notes':['note',None],
             'justification':['position', None],
