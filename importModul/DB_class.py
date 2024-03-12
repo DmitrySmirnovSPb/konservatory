@@ -16,12 +16,14 @@ class DB(object):
                 print("Database does not exist")
             else:
                 print(e)
+
     # Получить данные для подключения к базе
     def getConfig(self):
         f = Write(self.cur_dir + '\\data\\data.txt')
         result = f.getDictionary(';')
         result['database'] = self.DBName
         return result
+
     # Новая запись в таблицу nameTable
     def insert(self, nameTable:str, rowData:list):
         # Начало составления строи команды INSERT
@@ -47,12 +49,14 @@ class DB(object):
 
         temp = add_employee[:-1]                    # Конец составления строки команды INSERT
         data = (*data,)                             # Преобразование списка в кортеж
+        print(temp, data)
         cursor = self.mydb.cursor()
         cursor.execute(temp, data)
         emp_no = cursor.lastrowid
         self.mydb.commit()
         cursor.close()
         return emp_no
+
     def selectAll(self, nameTable:str, query: dict):
         keys = query.keys()
         if 'columns' in keys and query['columns'] != '*' :
@@ -86,12 +90,14 @@ class DB(object):
         cursor.close()
         if result == []: return (None,)
         return result
+
     # Сделать выборку в таблице nameTable 1 строка
     def select(self, nameTable:str, query: dict):
         result = self.selectAll(nameTable, query)
         if result == False: return False
         if result[0] == None: return None
         return result[0][0]
+
     # Обновить строку в таблице nameTable
     def update(self, nameTable: str, data: dict):
         query = 'UPDATE `' + nameTable + '` SET '
@@ -108,19 +114,23 @@ class DB(object):
             self.mydb.commit()
         cursor.close()
         return
+
     # Выполнение любого запроса    
     def anyRequest(self, request):
         cursor = self.mydb.cursor()
         cursor.execute(request)
         # print(cursor)
         cursor.close()
+
     # Очистка таблицы от записей и установка id = 1
     def clearTable(self, nameTable:str):
         query = 'TRUNCATE `' + nameTable + '`'
         self.anyRequest(query)
 
-    def where(self, where: list): # продумать автоматического составления WHERE
+    # продумать автоматического составления WHERE
+    def where(self, where: list): 
         return where[0]
+
     # Возвращает строку с экранированными слэшем кавычами и обратным слэшем
     # А также с удаленными лишними пробелами
     def escapingQuotes(self, string: str):
@@ -135,12 +145,14 @@ class DB(object):
         temp1 = temp.replace('\\','\\\\')
         temp = temp1.replace("'","\\'")
         return temp.replace('"','\\"')
+
     # Формирует запрос JOIN
     def joinSelect(self, tn:str, data: dict):
         result = ''
         for key in data:
             result += ' JOIN `'+ key + '` ON `' + tn +'`.`'+ data[key][0] + '` = `' + key + '`.`'+ data[key][1] + '`'
         return result
+
     # Получить список названия таблиц DB
     def getListTables(self):
         result = list()

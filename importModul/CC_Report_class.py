@@ -79,13 +79,20 @@ class CC_Report(getContent):
                     temp.append(j.strip())
             else: temp.append(i.strip())
         # print(temp)
-        string = string.lower().replace('\n',' ').replace('. ','.').replace('«','').replace('»','').replace('-центр','').replace('-инжиниринг','').replace('"','')
-        listString = list(string.split(' '))
+        string = string.lower().replace('\n',' ').replace('. ','.').replace('ао«дока','ао «дока').replace('«','').replace('»','').replace('ск ','').replace('-центр','').replace('-инжиниринг','').replace('художественно-реставрационная группа ','').replace('нв билдинг','нв#^~билдинг').replace('ук арт-глас','арт-глас').replace('"','').replace('новое время','новое#^~время').replace('политех строй','политехстрой')
+        listString = [a.replace('#^~',' ') for a in list(string.split())]# [a.replace('#^~',' ') for a in l]
         if '' in listString: listString.remove('')
-        id = self.db.select('people',{'where':['`l_name` = "'+listString[2]+'"'],'columns':['id']})
+        # print(listString)
+        if len(listString) < 2:
+            id = 0 # id равен 0 рпри отсутствии фамилии и имени человека
+        else:
+            id = self.db.select('people',{'where':['`l_name` = "'+listString[2]+'"'],'columns':['id']})
         if id == None:
             idContr = self.db.select('contractor',{'where':['`name` = "'+listString[1]+'"'],'columns':['id']})
-            # print('NONE',idContr)
+            if len(listString) == 3:
+                id = self.db.insert('people',[['l_name','company_id'],[[listString[2].title(),idContr]]])
+            else:
+                id = self.db.insert('people',[['l_name','initials','company_id'],[[listString[2].title(),listString[3].title(),idContr]]])
         return id
 
     def getBuildingAxes(self, string):
