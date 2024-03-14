@@ -16,9 +16,15 @@ class CC_Report(getContent):
     number_СС_Report = 0
     note = 0
 
+    gap = '#^~'
+
     def __init__(self, link, nameDB, globalLink, Sheet):
         getContent.__init__(self, link, nameDB, globalLink, Sheet)
         self.getNumberAndDate()
+        self.replacement = {
+            '\n':' ','. ':'.', 'ао«дока':'ао «дока', 'cк дока':'ск'+self.gap+'дока', '«':'', '»':'','ск ':'','-центр':'','-инжиниринг':'', 'художественно-реставрационная группа ':'','нв билдинг':'нв'+self.gap+'билдинг','ук арт-глас':'арт-глас','"':'','новое время':'новое'+self.gap+'время','политех строй':'политехстрой', 'лепной двор':'лепной'+self.gap+'двор','ван строй':'ванстрой','метеор лифт':'метеор'+self.gap+'лифт'
+        }
+        self.end = self.getEndData()
 
     def getNumberAndDate(self):
         List = [
@@ -33,7 +39,8 @@ class CC_Report(getContent):
             [r'^Факт$',['fact']],                                       # Столбец с фактической датой предъявления
             [r'^Субподрядчик:',['contractor_sRepresentative']],         # Столбец субподрядчика
             [r'^Исполнитель:',['executor']],                            # Столбец исполнителя
-            [r'^Примечания',['note']]                                   # Столбец с примечаниями
+            [r'^Примечания',['note']],                                  # Столбец с примечаниями
+            [r'исп.докум.',['dateSED']]                                 # Столбец с датой предоставления исполнительной документации
         ]
 #
 #         Через цикл
@@ -46,6 +53,7 @@ class CC_Report(getContent):
 #-------------------------------------------------------------------------------------------------------------#
 #
         for row in self.Content:
+                
             for column in self.Content[row]:
                 if self.Content[row][column] == None: temp = ''
                 else: temp = str(self.Content[row][column])
@@ -60,6 +68,18 @@ class CC_Report(getContent):
         listDate = re.findall(r'\d+\.\d+\.\d+', self.Content[self.rowDateReport][self.colDateReport])
         self.startReport  = dt.strptime(listDate[0], r'%d.%m.%Y')
         self.finishReport = dt.strptime(listDate[1], r'%d.%m.%Y')
+        if hasattr(self, 'dateSED'):
+            self.colCCEngeneer = self.dateSED + 1
+        else:
+            self.colCCEngeneer = self.note + 1
+
+    def getEndData(self):
+        for row in range(self.startRow,len(self.Content)):
+            if self.Content[row][self.columnNumber] == 'Вне графика':
+                self.border = row
+                continue
+            if self.Content[row][self.columnNumber] == None or self.Content[row][self.columnName] == None:
+                return row - 1
 
     def listKeysAndValues(self, exceptions = ['db', 'ExcelObj', 'Content'], pt = False):
         if pt : result = dict()
@@ -70,6 +90,13 @@ class CC_Report(getContent):
             else: result[key] = temp
         if pt : return result
 
+    def replacementStr(self, string:str):
+        
+        for old, new in self.replacement.items():
+            string = string.replace(old,new)
+
+        return string
+
     def getContractor(self, string):
         listString = string.split('«')
         temp = list()
@@ -78,13 +105,13 @@ class CC_Report(getContent):
                 for j in i.split('»'):
                     temp.append(j.strip())
             else: temp.append(i.strip())
-        # print(temp)
-        string = string.lower().replace('\n',' ').replace('. ','.').replace('ао«дока','ао «дока').replace('«','').replace('»','').replace('ск ','').replace('-центр','').replace('-инжиниринг','').replace('художественно-реставрационная группа ','').replace('нв билдинг','нв#^~билдинг').replace('ук арт-глас','арт-глас').replace('"','').replace('новое время','новое#^~время').replace('политех строй','политехстрой')
-        listString = [a.replace('#^~',' ') for a in list(string.split())]# [a.replace('#^~',' ') for a in l]
+
+        string = self.replacementStr(string.lower())
+        listString = [a.replace(self.gap,' ') for a in list(string.split())]# Восстановление пробелов в названии компаний
         if '' in listString: listString.remove('')
-        # print(listString)
-        if len(listString) < 2:
-            id = 0 # id равен 0 рпри отсутствии фамилии и имени человека
+
+        if len(listString) <= 2:
+            id = 0 # id равен 0 при отсутствии фамилии и имени человека
         else:
             id = self.db.select('people',{'where':['`l_name` = "'+listString[2]+'"'],'columns':['id']})
         if id == None:
@@ -93,6 +120,14 @@ class CC_Report(getContent):
                 id = self.db.insert('people',[['l_name','company_id'],[[listString[2].title(),idContr]]])
             else:
                 id = self.db.insert('people',[['l_name','initials','company_id'],[[listString[2].title(),listString[3].title(),idContr]]])
+        return id
+
+    def getEngineerCC(self, name):
+
+        if name == None: return None
+
+        name = name.split()[0]
+        id = self.db.select('people',{'where':['`l_name` = "' + name + '"'],'columns':['id']})
         return id
 
     def getBuildingAxes(self, string):
