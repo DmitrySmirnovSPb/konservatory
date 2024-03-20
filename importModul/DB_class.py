@@ -117,10 +117,16 @@ class DB(object):
 
     # Выполнение любого запроса    
     def anyRequest(self, request):
-        cursor = self.mydb.cursor()
-        cursor.execute(request)
+        result = []
+        with self.mydb.cursor() as cursor:
+            cursor.execute(request)
+            for movie in cursor.fetchall():
+                result.append(movie)
+        return result
+        # cursor = self.mydb.cursor()
+        # cursor.execute(request)
         # print(cursor)
-        cursor.close()
+        # cursor.close()
 
     # Очистка таблицы от записей и установка id = 1
     def clearTable(self, nameTable:str):
