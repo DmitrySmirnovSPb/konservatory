@@ -98,6 +98,7 @@ class CC_Report(getContent):
         return string
 
     def getContractor(self, string):
+        if string == None: return None
         listString = string.split('«')
         temp = list()
         for i in listString:
@@ -132,6 +133,8 @@ class CC_Report(getContent):
 
     def getBuildingAxes(self, string):
         result = []
+        if string == None:
+            return result
         mat = r'[ ,(]\d{,2}[ ]?-?[ ]?\d{1,2}[ ]?[\\/и]{1}[ ]?[А-Я]{0,1}_?Н?[ ]?-?[ ]?[А-Я]{1}_?Н?|[ ,(]\d{,2}[ ]?-?[ ]?\d{1,2}[ ]?[\\/и]{1}[ ]?[А-Я]{0,1}_?Н?[ ]?-?[ ]?[А-Я]{1}_?Н?$|[ ,(][А-Я]{1}_?Н?[ ]?-?[ ]?[А-Я]{0,1}_?Н?[ ]?[\\/и]{1}[ ]?\d{,2}[ ]?-?[ ]?\d{1,2}|[ ,(][А-Я]{1}_?Н?[ ]?-?[ ]?[А-Я]{0,1}_?Н?[ ]?[\\/и]{1}[ ]?\d{,2}[ ]?-?[ ]?\d{1,2}$'
         
         temp = re.findall(mat, string)
