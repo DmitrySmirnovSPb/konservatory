@@ -57,6 +57,7 @@ class CC_Report(getContent):
         for row in self.Content:
                 
             for column in self.Content[row]:
+                self.getReselt(row,column)
                 if self.Content[row][column] == None: temp = ''
                 else: temp = str(self.Content[row][column])
                 for fild in List:
@@ -65,11 +66,11 @@ class CC_Report(getContent):
                         setattr(self, fild[1][0], column)
                         if fild[1][0] == 'fact': setattr(self, 'startRow', row + 2)
             if self.rowNumReport != 0 and self.rowDateReport != 0 and self.columName != 0: break
-        self.numberReport = int(re.findall(r'\d+',re.findall(r'№\d+\b', self.Content[self.rowNumReport][self.colNumReport])[0])[0])
-        self.dateReport = dt.strptime(re.findall(r'\d+\.\d+\.\d+', self.Content[self.rowNumReport][self.colNumReport])[0], r'%d.%m.%Y')
+        self.number = int(re.findall(r'\d+',re.findall(r'№\d+\b', self.Content[self.rowNumReport][self.colNumReport])[0])[0])
+        self.date = dt.strptime(re.findall(r'\d+\.\d+\.\d+', self.Content[self.rowNumReport][self.colNumReport])[0], r'%d.%m.%Y')
         listDate = re.findall(r'\d+\.\d+\.\d+', self.Content[self.rowDateReport][self.colDateReport])
-        self.startReport  = dt.strptime(listDate[0], r'%d.%m.%Y')
-        self.finishReport = dt.strptime(listDate[1], r'%d.%m.%Y')
+        self.date_start  = dt.strptime(listDate[0], r'%d.%m.%Y')
+        self.date_finish = dt.strptime(listDate[1], r'%d.%m.%Y')
         if hasattr(self, 'dateSED'):
             self.colCCEngeneer = self.dateSED + 1
         else:
@@ -168,3 +169,18 @@ class CC_Report(getContent):
                 result.append(slst[0]+'-'+slst[1])
             else:result.append(slst[0])
         return result
+    
+    def getReselt(self, row, column):
+        test = {
+            'по графику:':'on_schedule',
+            'вне графика:':'off_schedule',
+            'не предъявлено:':'not_presented',
+            'не принято по различным причинам:':'not_accepted_for_various_reasons',
+            'принято в предыдущий период:':'accepted_in_the_previous_period',
+            'принято:':'accepted'
+        }
+        try:
+            key = test[self.Content[row][column]]
+            setattr(self, key, int(self.Content[row][column+1]))
+        except:
+            return

@@ -101,7 +101,7 @@ class DB(object):
     # Обновить строку в таблице nameTable
     def update(self, nameTable: str, data: dict):
         query = 'UPDATE `' + nameTable + '` SET '
-        for i in data:
+        for i in data['data']:
             if i != 'where':
                 query += '`' + i + '` = "' + self.escapingQuotes(str(data[i])) + '",'
         temp = query[:-1]

@@ -1,6 +1,5 @@
 /.vscode
 /pyvenv.cfg
-/test.py
 /__pycache__
 /.gitignore
 ~$Карта таблиц.xlsx

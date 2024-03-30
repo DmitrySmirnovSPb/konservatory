@@ -6,6 +6,7 @@ from DB_class import DB
 class Row (object):
 
     data = {
+        'number':0,                     # ID в таблице report номер отчета
         'сall_Customer':None,           # Номер в заявке вызова заказчика
         'room':'[]',                    # Номер помещания
         'number_the_Customer':None,     # Номер позиции в заявке на вызов заказчика
@@ -47,15 +48,16 @@ class Row (object):
         self.getBuildingAxes()
         self.getContractor()
         self.getRoom()
-        print(self.data)
+        print('self.data\n',self.data)
         exit(0)
 
     def data_Transfer(self):
         for key in self.data:
             try:
                 self.data[key] = self.row[key]
-                print(key)
+                print(key,'=>',self.data[key], '     ------>     ------>    data_Transfer')
             except:
+                print(key, '* NO data_Transfer *')
                 pass
 
     def getRoom(self):
