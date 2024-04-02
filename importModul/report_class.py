@@ -65,7 +65,7 @@ class Report(object):
 
         id = self.db.update(self.table,{'where':['`id` = %s '%id],'data':dataUpdate})
 
-    def getFields(self, lst):               # Получить поле или поля при наличии или None если поля нет bkb lfyyst yt rjhhtrnys
+    def getFields(self, lst):               # Получить поле или поля при наличии или None если поля нет илиданные не корректны
         if type(lst) == str:
             try:
                 return getattr(self, lst)
