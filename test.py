@@ -11,8 +11,26 @@ def getRoom(text):
     lst = re.findall(mach, text)
     return json.dumps(lst)
 
-def getFloor(obj, row):
-    return 'Заглушка'
+def getFloor(text):
+    result = {}
+    mach_1 = r'([+-]\d+[\.,]\d{1,3})'
+    result['altitude_mark'] = re.findall(mach_1, text)
+    
+    mach_2 = r'(\d? ?(эт\.)|(\bэтаж) \d?)'
+    temp = re.findall(mach_2, text)
+    if type(temp) != list or len(temp) == 0:
+        return result
+    
+    result['floor'] = list()
+    for fl in temp[0]:
+        print(fl,'*******************************')
+        tempFloor = re.findall(r'\d', fl)
+        if len(tempFloor) > 0 :
+            result['floor'].append(int(tempFloor[0][0]))
+        else:
+            continue
+    print('*****')
+    return result
 
 if __name__ == '__main__':
 
@@ -31,7 +49,7 @@ if __name__ == '__main__':
         temp = re.search(match, string)
         if temp:
             result.append(temp[0])
-    result.sort(reverse = True)
+    result.sort()
 
     listick = ['columnNumber',          # Столбец с номера по порядку в отчёте
         'columnName',                   # Столбец с названием работ и материалов
@@ -49,8 +67,7 @@ if __name__ == '__main__':
         'colCCEngeneer']                # Столбец с именем инженера
 
     for item in result:
-        scheduledCall = True # Вызов по графику
-        print('\n+----------------------------------------------------------------------+\n')
+        scheduledCall = True            # Вызов по графику
         gc = CC_Report(link = item, globalLink = path, Sheet = 'Отчёт', nameDB = 'polytechstroy')
         
         report = Report({})
@@ -60,86 +77,36 @@ if __name__ == '__main__':
                 report.data[key] = getattr(gc, key)
                 report.delError(key)
             except:
-                report.data[key] = '\n%s -> None\n'%key
+                report.data[key] = None
 
 # Запись в БД report, проверка существоания записи по дате отчёта
         idReport = report.checkingTheRecord()
         if idReport == False:
             idReport = report.makingAnEntry() 
 
-        if idReport == False:
-            continue
+        if idReport != False:
+            if len(gc.db.anyRequest('SELECT `id` FROM `сс_accepted_volumes` WHERE `number` = %s;'%idReport)) > 0:
+                continue
 
-        # for test in gc.db.anyRequest('SELECT `people`.`id` AS `id`,`people`.`f_name`,`people`.`m_name`,`people`.`l_name`,`people`.`initials`,`people`.`position` AS `Должность`,`contractor`.`name` FROM `people` JOIN `contractor` ON `people`.`company_id` = `contractor`.`id` ORDER BY `id`;'):
-        #     print(test)
-        # exit(0)
-        tempKey = str(gc.date_start.year) + '-' + str(gc.number)
-        finalityDict[tempKey] = {}
-        gc.listKeysAndValues()
         flag = True
         for row in range(gc.startRow, gc.end + 1):
-            name = gc.Content[row][gc.columnName]
+            print('\n+----------------------------------------------------------------------+\n')
             if gc.Content[row][gc.columnNumber] == 'Вне графика' and flag:
                 flag = False
                 continue
+            name = gc.Content[row][gc.columnName]
             tempDict = {'number':idReport,'in_the_chart':flag}
             for key in listick:
                 try:
                     tempDict[key] = gc.Content[row][getattr(gc,key)]
                 except:
                     tempDict[key] = None
-            # tempDict['columnNumber'] = gc.Content[row][gc.columnNumber]
-            # tempDict['columnName'] = gc.Content[row][gc.columnName]
-            # tempDict['columnName'] = gc.Content[row][gc.columnName]
+            tempDict['number_in_order'] = gc.Content[row][getattr(gc,'columnNumber')]
 
-            # finalityDict[tempKey][row] = {
-            #     'сcall_Customer':None,          #
-            #     'in_the_chart':flag,            # иникатор по графику или вне графика
-            #     'room':'[]',                    # Номер помещания
-            #     'number_the_Customer':None,     #
-            #     'number_in_b_estimate':None,    #
-            #     'number_in_order':None,         #
-            #     'name_id':None,                 #
-            #     'dimension':None,               #
-            #     'value':None,                   #
-            #     'code':None,                    #
-            #     'date_of_the_call':None,        # Дата предъявления объёмов по графику
-            #     'actual_date':None,             # Фактическая дата приёмки
-            #     'id_contractor':None,           # id подрядчика по заявке
-            #     'id_actual_contractor':None,    # id исполнителя работ
-            #     'id_CC_engineer':None,          # id инженера строительного контроля принимавшиего работы
-            #     'result':False,                 #
-            #     'axes':None,                    # Оси в которых сдаётся объём в формате JSON
-            #     'floor':None,                   #
-            #     'number_report':None,           # Номер в отчёте
-            #     'date_report':None,             # Дата отчёта
-            #     'note':None                     # Примечания к записи
-            # }
-            # name = gc.Content[row][gc.columnName]
-            # finalityDict[tempKey][row]['number_report'] = gc.numberReport
-            # finalityDict[tempKey][row]['axes'] = gc.getAxes(gc.getBuildingAxes(re.sub(r'М ?[/\\] ?Н','М_Н', str(name))))
-            # finalityDict[tempKey][row]['date_report'] = gc.dateReport
-            # finalityDict[tempKey][row]['room'] = getRoom(name)
-            # finalityDict[tempKey][row]['floor'] = getFloor(gc, row)
-            # finalityDict[tempKey][row]['note'] = gc.Content[row][gc.note]
-            # finalityDict[tempKey][row]['date_of_the_call'] = None if type(gc.Content[row][gc.rowDateReport]) == str else gc.Content[row][gc.plane]
-            # finalityDict[tempKey][row]['actual_date'] = None if type(gc.Content[row][gc.rowDateReport]) == str else gc.Content[row][gc.fact]
-            # finalityDict[tempKey][row]['id_contractor'] = gc.getContractor(str(gc.Content[row][gc.contractor_sRepresentative]))
-            # finalityDict[tempKey][row]['id_actual_contractor'] =  gc.getContractor(str(gc.Content[row][gc.executor]))
-            # finalityDict[tempKey][row]['id_CC_engineer'] = gc.getEngineerCC(gc.Content[row][gc.colCCEngeneer])
-            
             rowClass = Row({row:tempDict})
-
-    # for key in finalityDict:
-    #     for keyTwo in finalityDict[key]:
-    #         if len(str(finalityDict[key][keyTwo]['room'])) > 2:
-    #             print('+-----------------------+-----------------------+')
-    #             print(key,'->',keyTwo,'room :',finalityDict[key][keyTwo]['room'])
-    #             try:
-    #                 print(key,'->',keyTwo,'сall_Customer:',finalityDict[key][keyTwo]['сall_Customer'])
-    #                 exit(0)
-    #             except:
-    #                 print(key,'->',keyTwo,'сall_Customer: None')
+            if row > 100:
+                exit(0)
+        exit(0)
 
     # Время выполнения скрипта
     print("--- %s секунд ---" %(time.time() - start_time))

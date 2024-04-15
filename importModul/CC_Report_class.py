@@ -60,11 +60,11 @@ class CC_Report(getContent):
                 self.getReselt(row,column)
                 if self.Content[row][column] == None: temp = ''
                 else: temp = str(self.Content[row][column])
-                for fild in List:
-                    if re.search(fild[0],temp):
-                        if len(fild[1]) == 2 : setattr(self, fild[1][1], row)
-                        setattr(self, fild[1][0], column)
-                        if fild[1][0] == 'fact': setattr(self, 'startRow', row + 2)
+                for field in List:
+                    if re.search(field[0],temp):
+                        if len(field[1]) == 2 : setattr(self, field[1][1], row)
+                        setattr(self, field[1][0], column)
+                        if field[1][0] == 'fact': setattr(self, 'startRow', row + 2)
             if self.rowNumReport != 0 and self.rowDateReport != 0 and self.columName != 0: break
         self.number = int(re.findall(r'\d+',re.findall(r'№\d+\b', self.Content[self.rowNumReport][self.colNumReport])[0])[0])
         self.date = dt.strptime(re.findall(r'\d+\.\d+\.\d+', self.Content[self.rowNumReport][self.colNumReport])[0], r'%d.%m.%Y')

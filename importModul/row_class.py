@@ -7,25 +7,24 @@ class Row (object):
 
     data = {
         'number':0,                     # ID в таблице report номер отчета
-        'сall_Customer':None,           # Номер в заявке вызова заказчика
+        'in_the_chart':True,            # В графике или вне графика
+        'call_Customer':None,           # Номер в заявке вызова заказчика
         'room':'[]',                    # Номер помещания
         'number_the_Customer':None,     # Номер позиции в заявке на вызов заказчика
-        'number_in_b_estimate':None,    #
-        'number_in_order':None,         #
-        'name_id':None,                 #
-        'dimension':None,               #
-        'value':None,                   #
-        'code':None,                    #
+        'number_in_b_estimate':None,    # Предпологаемый номер по порядку в смете контракта в формате JSON
+        'number_in_order':None,         # Номер в отчёте
+        'name_id':None,                 # id Названия работы или материала
+        'dimension':None,               # id Единицы измерения
+        'value':None,                   # Количество фактически принятых работ
+        'code':None,                    # Шифр проекта
         'date_of_the_call':None,        # Дата предъявления объёмов по графику
         'actual_date':None,             # Фактическая дата приёмки
         'id_contractor':None,           # id подрядчика по заявке
         'id_actual_contractor':None,    # id исполнителя работ
         'id_CC_engineer':None,          # id инженера строительного контроля принимавшиего работы
-        'result':False,                 #
+        'result':False,                 # Результат предъявления работ:
         'axes':None,                    # Оси в которых сдаётся объём в формате JSON
-        'floor':None,                   #
-        'number_report':None,           # Номер в отчёте
-        'date_report':None,             # Дата отчёта
+        'floor':None,                   # Этаж и/или отметки
         'note':None                     # Примечания к записи
     }
 
@@ -38,9 +37,8 @@ class Row (object):
         self.replacement = {
             '\n':' ','. ':'.', 'ао«дока':'ао «дока', 'cк дока':'ск'+self.gap+'дока', '«':'', '»':'','ск ':'','-центр':'','-инжиниринг':'', 'художественно-реставрационная группа ':'','нв билдинг':'нв'+self.gap+'билдинг','ук арт-глас':'арт-глас','"':'','новое время':'новое'+self.gap+'время','политех строй':'политехстрой', 'лепной двор':'лепной'+self.gap+'двор','ван строй':'ванстрой','метеор лифт':'метеор'+self.gap+'лифт', 'политехстрой-сварго':'политехстрой'
         }
-        print('\n-------------------------------------------------')
-        print(self.number_Row,'=>\n',self.row,'\n')
         self.get_Init_Data()
+        self.printFields()
     
     def get_Init_Data(self):
         self.data_Transfer()
@@ -48,16 +46,33 @@ class Row (object):
         self.getBuildingAxes()
         self.getContractor()
         self.getRoom()
-        print('self.data\n',self.data)
-        exit(0)
+        self.getResult()
+        self.getFloor()
+        self.getDates()
+        self.getCode()
+        self.getscopeOfWork()
+    
+    def getResult(self):
+        if self.data['note'] == None:
+            self.data['result'] = 1
+            return
+        tx = self.data['note'].lower()
+        if 'не принято' in tx:
+            self.data['result'] = 2
+        elif 'не предъявлено' in tx:
+            self.data['result'] = 3
+        elif 'принято в предыдущий период' in tx:
+            self.data['result'] = 4
+        else:
+            self.data['result'] = 1
 
     def data_Transfer(self):
         for key in self.data:
             try:
                 self.data[key] = self.row[key]
-                print(key,'=>',self.data[key], '     ------>     ------>    data_Transfer')
+                # print(key,'=>',self.data[key], '     ------>     ------>    data_Transfer')
             except:
-                print(key, '* NO data_Transfer *')
+                # print(key, '* NO data_Transfer *')
                 pass
 
     def getRoom(self):
@@ -105,10 +120,14 @@ class Row (object):
         for step in lst:
             slst = step.split('-')
             if len(slst) > 1:
+                try:
+                    slst[0], slst[1] = int(slst[0]), int(slst[1])
+                except:
+                    pass
+                
                 if slst[0] > slst[1]:
                     slst[0], slst[1] = slst[1], slst[0]
-                result.append(slst[0]+'-'+slst[1])
-            else:result.append(slst[0])
+            result.append(slst)
         return result
 
     def getContractor(self):
@@ -169,3 +188,49 @@ class Row (object):
 
     def get_result(self):
         return self.data
+
+    def printFields(self):
+        print('self.data =====>')
+        for field in self.data:
+            print(field, self.data[field])
+        # exit(0)
+
+    def getFloor(self):
+
+        text = self.row['columnName']
+        
+        self.data['floor'] = {}
+
+        mach_1 = r'([+-]\d+[\.,]\d{1,3})'
+        altitude_mark = re.findall(mach_1, text)
+        if len(altitude_mark) > 0:
+            self.data['floor']['altitude_mark'] = altitude_mark
+        
+        mach_2 = r'(\d? ?(эт\.)|(\bэтаж) \d?)'
+        temp = re.findall(mach_2, text)
+        if type(temp) == list and len(temp) > 0:
+            self.data['floor']['floor'] = list()
+            for fl in temp[0]:
+                tempFloor = re.findall(r'\d', fl)
+                if len(tempFloor) > 0 :
+                    self.data['floor']['floor'].append(int(tempFloor[0][0]))
+                else:
+                    continue
+        temp = json.loads(self.data['room'])
+        if len(self.data['floor']) == 0 and len(temp) > 0:
+            self.data['floor']['floor'] = int(temp[0].split('.')[0])
+    
+    def getDates(self):
+
+        self.data['date_of_the_call'] = self.row['plane']   # Дата предъявления объёмов по графику
+        self.data['actual_date'] = self.row['fact'] if '---' not in str(self.row['fact']) else None         # Фактическая дата приёмки
+
+    def getCode(self):
+
+        self.data['code'] = self.row['workingDocumentationColumn']
+
+    def getscopeOfWork(self):
+        
+        self.data['value'] = self.row['countColumn']        # Количество фактически принятых работ
+
+        self.data['dimension'] = self.row['unitOfMeasurement']
