@@ -214,7 +214,7 @@ class Row (object):
         if type(temp) == list and len(temp) > 0:
             self.data['floor']['floor'] = list()
             for fl in temp:
-                # print(fl)
+
                 tempFloor = re.findall(r'\d', fl)
                 if len(tempFloor) > 0 :
                     self.data['floor']['floor'].append(int(tempFloor[0]))
@@ -232,16 +232,18 @@ class Row (object):
     def getIDCode(self, data):
         temp = {}
 
-        date = re.findall (r'\d\d\.\d\d\.\d{4}',data['end']) # Проверка на наличие даты в шифре прокта
+        date = re.findall(r'\b\d\d\.\d\d\.\s?\d{4}г?\.?\b', data['end']) # Проверка на наличие даты в шифре прокта
+
         temp['date'] = []
         if date != []:
             for d in date:
-                temp['date'].append(str(datetime.datetime.strptime(d, '%d.%m.%Y')))
                 data['end'] = data['end'].replace(d, '').replace('от','').strip()
+                d = d.replace(' ', '')
+                temp['date'].append(str(datetime.datetime.strptime(d, '%d.%m.%Y')))
         else:
             temp['date'] = None
 
-        sheet = re.findall (r'(\bл\.?.*\d+\.?d+\b)|(\bлист\.?.*\d+\.?d+\b)',data['end']) # Поверка на наличие укзаний на лист проекта code
+        sheet = re.findall (r'(\bл\.?.*\d+\.?d+\b)|(\bлист\.?.*\d+\.?d+\b)',data['end']) # Поверка на наличие указаний на лист проекта code
 
         if sheet != []:
             if sheet[0][0] != '':
@@ -258,14 +260,14 @@ class Row (object):
 
         tmp = []
         if data['code'] != None:
-            tmp.append(data['code'])
+            codeTemp = data['code'].replace('001_12','001/12').replace('001-12','001/12')
+            tmp.append(codeTemp)
         if type(data['journal']) == list:
             for d in data['journal']:
                 tmp.append(d)
         elif data['journal'] != None:
             tmp.append(data['journal'])
-        print(data)
-        print(tmp)
+        
         COP = [x for x in tmp if x != ''] # список шифров проекта или ЖАН
         
         tempID = []
@@ -277,8 +279,16 @@ class Row (object):
 
             if id == None:
                 Values =[x]
-                Values.append(temp['date'][0])
-                id = db.insert('code',[Keys,[Values]])#('dimension',[['name','multiplicity'],[[self.row['unitOfMeasurement'],mult]]])
+                Keys = ['code']
+                
+                if type(temp['date']) == list:
+                    Values.append(temp['date'][0])
+                    Keys.append('date')
+                if type(temp['sheet']) == list:
+                    Values.append(temp['sheet'][0])
+                    Keys.append('sheet')
+
+                id = db.insert('code',[Keys,[Values]])
             
             tempID.append(id)
 
@@ -299,8 +309,8 @@ class Row (object):
         pr1 = re.findall(t1, end)
         
         if pr != []:
-            result['code'] = pr[0]
-            end = end.replace(result['code'], '')
+            result['code'] = pr[0]#.replace('001-12','001\/12').replace('001_12','001\/12')
+            end = end.replace(pr[0], '')
         if pr1 != [] and len(pr1) == 1:
             result['journal'] = pr1[0]
             end = end.replace(result['journal'], '')
