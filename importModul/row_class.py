@@ -30,6 +30,8 @@ class Row (object):
 
     gap = '#^~'
 
+    mat = r'[ ,(]\d{,2}[ ]?-?[ ]?\d{1,2}[ ]?[\\/и]{1}[ ]?[А-Я]{0,1}_?Н?[ ]?-?[ ]?[А-Я]{1}_?Н?|[ ,(]\d{,2}[ ]?-?[ ]?\d{1,2}[ ]?[\\/и]{1}[ ]?[А-Я]{0,1}_?Н?[ ]?-?[ ]?[А-Я]{1}_?Н?$|[ ,(][А-Я]{1}_?Н?[ ]?-?[ ]?[А-Я]{0,1}_?Н?[ ]?[\\/и]{1}[ ]?\d{,2}[ ]?-?[ ]?\d{1,2}|[ ,(][А-Я]{1}_?Н?[ ]?-?[ ]?[А-Я]{0,1}_?Н?[ ]?[\\/и]{1}[ ]?\d{,2}[ ]?-?[ ]?\d{1,2}$'
+
     def __init__(self, row: dict):
         for i in row:
             self.number_Row = i
@@ -94,9 +96,8 @@ class Row (object):
         result = []
         if self.row['columnName'] == None:
             return result
-        mat = r'[ ,(]\d{,2}[ ]?-?[ ]?\d{1,2}[ ]?[\\/и]{1}[ ]?[А-Я]{0,1}_?Н?[ ]?-?[ ]?[А-Я]{1}_?Н?|[ ,(]\d{,2}[ ]?-?[ ]?\d{1,2}[ ]?[\\/и]{1}[ ]?[А-Я]{0,1}_?Н?[ ]?-?[ ]?[А-Я]{1}_?Н?$|[ ,(][А-Я]{1}_?Н?[ ]?-?[ ]?[А-Я]{0,1}_?Н?[ ]?[\\/и]{1}[ ]?\d{,2}[ ]?-?[ ]?\d{1,2}|[ ,(][А-Я]{1}_?Н?[ ]?-?[ ]?[А-Я]{0,1}_?Н?[ ]?[\\/и]{1}[ ]?\d{,2}[ ]?-?[ ]?\d{1,2}$'
 
-        temp = re.findall(mat, self.row['columnName'])
+        temp = re.findall(self.mat, self.row['columnName'])
         if len(temp) > 0:
             for f in temp: result.append(re.sub(r'[,(]','', str(f)))
 
@@ -111,13 +112,13 @@ class Row (object):
     def clearList(self, lsts: list):
         result = list()
         for lst in lsts:
-            result.append(lst.replace('и','/').replace(' ',''))
+            result.append(lst.replace('и','/').replace(' ','').replace('\\','/'))
         return result
 
     def sortAxes(self, lst: list): # Сортировка осей, приведение к общему стандарту.
         result = list()
         if not any(c.isdigit() for c in lst[0]):    # Опредиляем первую пару на наличие цифры в ней
-            lst[0], lst[1] = lst[1], lst[0]             # Перестановка в случае если нервая пара не содержит цифру
+            lst[0], lst[1] = lst[1], lst[0]         # Перестановка в случае если нервая пара не содержит цифру
         for step in lst:
             slst = step.split('-')
             if len(slst) > 1:
@@ -309,7 +310,7 @@ class Row (object):
         pr1 = re.findall(t1, end)
         
         if pr != []:
-            result['code'] = pr[0]#.replace('001-12','001\/12').replace('001_12','001\/12')
+            result['code'] = pr[0].replace(' ','').replace('-АР.1.2','-АР1.2')
             end = end.replace(pr[0], '')
         if pr1 != [] and len(pr1) == 1:
             result['journal'] = pr1[0]
@@ -344,4 +345,27 @@ class Row (object):
         self.data['dimension'] = id
     
     def nameID(self):
-        print(self.row['columnName'])
+
+        temp = self.row['columnName'].replace('\n', ' ')
+
+        listDeleted = ['на отм.','в/о','в осях','подвал',r'по потолку \d этажа',r'по полу \d этажа',r'\bнад\b',r'с \d по \d эт\.?',r'\d\s?эт\.*',r'пом\.\s?\d\.\d\.\d{,3}', self.mat, r'[+-]\d+[\.,]\d{1,3}']
+        for x in listDeleted:
+            temp = re.sub(x,'', temp)
+        temp = temp.strip()
+        temp = ' '.join(temp.split())
+        temp = temp.replace(' ,',',').replace(' .','.').replace(',.','.').replace('.,','.')
+        if temp[-1] == ',':
+            temp = temp[:-1]
+        
+        self.data['name_id'] = self.getID('emawfr', temp)
+
+    def getID(self, tableName: str, name: str):
+
+        db = DB('polytechstroy')
+
+        id = db.select(tableName,{'where':['`name` = "' + name + '"'],'columns':['id']})
+
+        if id == None:
+            id = db.insert(tableName,[['name'],[[name]]])
+        
+        return id

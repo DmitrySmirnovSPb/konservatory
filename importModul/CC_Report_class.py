@@ -138,7 +138,7 @@ class CC_Report(getContent):
         result = []
         if string == None:
             return result
-        mat = r'[ ,(]\d{,2}[ ]?-?[ ]?\d{1,2}[ ]?[\\/и]{1}[ ]?[А-Я]{0,1}_?Н?[ ]?-?[ ]?[А-Я]{1}_?Н?|[ ,(]\d{,2}[ ]?-?[ ]?\d{1,2}[ ]?[\\/и]{1}[ ]?[А-Я]{0,1}_?Н?[ ]?-?[ ]?[А-Я]{1}_?Н?$|[ ,(][А-Я]{1}_?Н?[ ]?-?[ ]?[А-Я]{0,1}_?Н?[ ]?[\\/и]{1}[ ]?\d{,2}[ ]?-?[ ]?\d{1,2}|[ ,(][А-Я]{1}_?Н?[ ]?-?[ ]?[А-Я]{0,1}_?Н?[ ]?[\\/и]{1}[ ]?\d{,2}[ ]?-?[ ]?\d{1,2}$'
+        mat = r'[ ,(]\d{,2}[ ]?-?[ ]?\d{1,2}[ ]?[\\/и]{1,3}[ ]?[А-Я]{0,1}_?Н?[ ]?-?[ ]?[А-Я]{1,3}_?Н?|[ ,(]\d{,2}[ ]?-?[ ]?\d{1,2}[ ]?[\\/и]{1,3}[ ]?[А-Я]{0,1}_?Н?[ ]?-?[ ]?[А-Я]{1}_?Н?$|[ ,(][А-Я]{1}_?Н?[ ]?-?[ ]?[А-Я]{0,1}_?Н?[ ]?[\\/и]{1,3}[ ]?\d{,2}[ ]?-?[ ]?\d{1,2}|[ ,(][А-Я]{1}_?Н?[ ]?-?[ ]?[А-Я]{0,1}_?Н?[ ]?[\\/и]{1,3}[ ]?\d{,2}[ ]?-?[ ]?\d{1,2}$'
         
         temp = re.findall(mat, string)
         if len(temp) > 0:
@@ -154,7 +154,7 @@ class CC_Report(getContent):
     def clearList(self, lsts: list):
         result = list()
         for lst in lsts:
-            result.append(lst.replace('и','/').replace(' ',''))
+            result.append(lst.replace('и','/').replace(' ','').replace('\\','/').replace('//','/'))
         return result
 
     def sortAxes(self, lst: list): # Сортировка осей, приведение к общему стандарту.
@@ -169,7 +169,7 @@ class CC_Report(getContent):
                 result.append(slst[0]+'-'+slst[1])
             else:result.append(slst[0])
         return result
-    
+
     def getReselt(self, row, column):
         test = {
             'по графику:':'on_schedule',
