@@ -30,7 +30,7 @@ class Row (object):
 
     gap = '#^~'
 
-    mat = r'[ ,(]\d{,2}[ ]?-?[ ]?\d{1,2}[ ]?[\\/и]{1}[ ]?[А-Я]{0,1}_?Н?[ ]?-?[ ]?[А-Я]{1}_?Н?|[ ,(]\d{,2}[ ]?-?[ ]?\d{1,2}[ ]?[\\/и]{1}[ ]?[А-Я]{0,1}_?Н?[ ]?-?[ ]?[А-Я]{1}_?Н?$|[ ,(][А-Я]{1}_?Н?[ ]?-?[ ]?[А-Я]{0,1}_?Н?[ ]?[\\/и]{1}[ ]?\d{,2}[ ]?-?[ ]?\d{1,2}|[ ,(][А-Я]{1}_?Н?[ ]?-?[ ]?[А-Я]{0,1}_?Н?[ ]?[\\/и]{1}[ ]?\d{,2}[ ]?-?[ ]?\d{1,2}$'
+    mat = r'[ ,(]\d{,2}[ ]?-?[ ]?\d{1,2}[ ]?[\\/и]{1}[ ]?[А-Я]{0,1}[_/]?Н?[ ]?-?[ ]?[А-Я]{1}[_/]?Н?|[ ,(]\d{,2}[ ]?-?[ ]?\d{1,2}[ ]?[\\/и]{1}[ ]?[А-Я]{0,1}[_/]?Н?[ ]?-?[ ]?[А-Я]{1}[_/]?Н?$|[ ,(][А-Я]{1}[_/]?Н?[ ]?-?[ ]?[А-Я]{0,1}[_/]?Н?[ ]?[\\/и]{1}[ ]?\d{,2}[ ]?-?[ ]?\d{1,2}|[ ,(][А-Я]{1}[_/]?Н?[ ]?-?[ ]?[А-Я]{0,1}[_/]?Н?[ ]?[\\/и]{1}[ ]?\d{,2}[ ]?-?[ ]?\d{1,2}$'
 
     def __init__(self, row: dict):
         for i in row:
@@ -243,17 +243,20 @@ class Row (object):
                 temp['date'].append(str(datetime.datetime.strptime(d, '%d.%m.%Y')))
         else:
             temp['date'] = None
+        sheet = []
+        F = r'\bл\.?.*?(\d+\.*\d*,?)+'
+        pattern = re.compile(r'л.*(\b\d+\.?\d*\b,?)+', re.I)
+        tmp = []
+        for match in pattern.finditer(data['end']):
+            tmp += match.group().replace('л.','').split(',')
 
-        sheet = re.findall (r'(\bл\.?.*\d+\.?d+\b)|(\bлист\.?.*\d+\.?d+\b)',data['end']) # Поверка на наличие указаний на лист проекта code
+#        tmp = re.findall(F,data['end'], re.IGNORECASE)# Поверка на наличие указаний на лист проекта code re.sub
+        if len(tmp) > 0:
+            for string in tmp:
+                sheet.append(string)
 
         if sheet != []:
-            if sheet[0][0] != '':
-                sheetRes = int(sheet[0][0].replace('л.',''))
-                data['end'] = data['end'].replace(sheet[0][0],'')
-            else:
-                sheetRes = int(sheet[0][1].replace('лист.*',''))
-                data['end'] = data['end'].replace(sheet[0][1])
-            temp['sheet'] = sheetRes
+            temp['sheet'] = sheet
         else:
             temp['sheet'] = None
 
@@ -304,14 +307,21 @@ class Row (object):
     def getCode(self):
         result = {'code':None,'journal':None}
         end = self.row['workingDocumentationColumn']
-        t = r'\b001[-/_]12-К-[А-Я]+[\. ]?\d*\.?\d*\b'
-        t1 = r'\bЖАН\s*№?\s*\d+\b'
+        t = r'\b001[-/_]12-[КK]-[А-ЯA-Z]+[\. ]*[А-ЯA-Z]*\d*\.*[А-ЯA-Z]*\d*[-\.]?[А-ЯA-Z0-9]*[-\.,]?[А-ЯA-Z0-9]*[-\.,]?[А-ЯA-Z0-9]*\b'
+        t1 = r'\b№?\s?\d*\s*в?\s?\bЖАН\s*№?\s*\d*\b'
+
         pr = re.findall(t, end)
         pr1 = re.findall(t1, end)
-        
+
+        print(end,'   ||||||||||||  ',pr,pr1)
+        listReplace = {
+            ' ':'','-АР.1.2':'-АР1.2','КЖО':'КЖ0'
+        }
         if pr != []:
-            result['code'] = pr[0].replace(' ','').replace('-АР.1.2','-АР1.2')
+            result['code'] = pr[0]
             end = end.replace(pr[0], '')
+            for retl in listReplace:
+                result['code'] = result['code'].replace(retl, listReplace[retl])
         if pr1 != [] and len(pr1) == 1:
             result['journal'] = pr1[0]
             end = end.replace(result['journal'], '')
@@ -348,7 +358,7 @@ class Row (object):
 
         temp = self.row['columnName'].replace('\n', ' ')
 
-        listDeleted = ['на отм.','в/о','в осях','подвал',r'по потолку \d этажа',r'по полу \d этажа',r'\bнад\b',r'с \d по \d эт\.?',r'\d\s?эт\.*',r'пом\.\s?\d\.\d\.\d{,3}', self.mat, r'[+-]\d+[\.,]\d{1,3}']
+        listDeleted = ['с отм.', r'\bдо\b','на отм.','в/о','в осях',r'\bв?\s?подвале?',r'по потолку \d этажа',r'по полу \d этажа',r'\bнад\b',r'с \d по \d эт\.?',r'\d\s?эт\.*',r'пом\.\s?\d\.\d\.\d{,3}', self.mat, r'[+-]\d+[\.,]\d{1,3}']
         for x in listDeleted:
             temp = re.sub(x,'', temp)
         temp = temp.strip()

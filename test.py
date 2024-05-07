@@ -76,7 +76,7 @@ if __name__ == '__main__':
             tempDict['number_in_order'] = gc.Content[row][getattr(gc,'columnNumber')]
 
             rowClass = Row({row:tempDict})
-            if row > 110:
+            if row > 123:
                 exit(0)
         exit(0)
 
