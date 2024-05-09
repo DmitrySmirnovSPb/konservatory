@@ -74,9 +74,10 @@ if __name__ == '__main__':
                 except:
                     tempDict[key] = None
             tempDict['number_in_order'] = gc.Content[row][getattr(gc,'columnNumber')]
+            tempDict['number_in_b_estimate'] = gc.Content[row][getattr(gc,'numberInBEstimate')]
 
             rowClass = Row({row:tempDict})
-            if row > 123:
+            if row > 34:
                 exit(0)
         exit(0)
 

@@ -8,12 +8,12 @@ class Row (object):
     data = {
         'number':0,                     ### ID в таблице report номер отчета
         'in_the_chart':True,            ### В графике или вне графика
-        'call_Customer':None,           # Номер в заявке вызова заказчика
+        'call_Customer':None,           ### Номер в заявке вызова заказчика
         'room':'[]',                    ### Номер помещания
         'number_the_Customer':None,     ### Номер позиции в заявке на вызов заказчика
-        'number_in_b_estimate':None,    # Предпологаемый номер по порядку в смете контракта в формате JSON
+        'number_in_b_estimate':None,    ### Предпологаемый номер по порядку в смете контракта в формате JSON
         'number_in_order':None,         ### Номер в отчёте
-        'name_id':None,                 # id Названия работы или материала
+        'name_id':None,                 ### id Названия работы или материала
         'dimension':None,               ### id Единицы измерения
         'value':None,                   ### Количество фактически принятых работ
         'code':None,                    ### Шифр проекта
@@ -73,9 +73,7 @@ class Row (object):
         for key in self.data:
             try:
                 self.data[key] = self.row[key]
-                # print(key,'=>',self.data[key], '     ------>     ------>    data_Transfer')
             except:
-                # print(key, '* NO data_Transfer *')
                 pass
 
     def getRoom(self):
@@ -244,13 +242,13 @@ class Row (object):
         else:
             temp['date'] = None
         sheet = []
-        F = r'\bл\.?.*?(\d+\.*\d*,?)+'
-        pattern = re.compile(r'л.*(\b\d+\.?\d*\b,?)+', re.I)
+
+        pattern = re.compile(r'л\.\s?\b\d+[.,]?\d*(\s?[-,]?\s?\d+[.,]?\d*)*', re.I)
         tmp = []
         for match in pattern.finditer(data['end']):
             tmp += match.group().replace('л.','').split(',')
+        data['end'] = pattern.sub('', data['end'])
 
-#        tmp = re.findall(F,data['end'], re.IGNORECASE)# Поверка на наличие указаний на лист проекта code re.sub
         if len(tmp) > 0:
             for string in tmp:
                 sheet.append(string)
@@ -271,9 +269,9 @@ class Row (object):
                 tmp.append(d)
         elif data['journal'] != None:
             tmp.append(data['journal'])
-        
+
         COP = [x for x in tmp if x != ''] # список шифров проекта или ЖАН
-        
+
         tempID = []
         db = DB('polytechstroy')
 
@@ -284,7 +282,7 @@ class Row (object):
             if id == None:
                 Values =[x]
                 Keys = ['code']
-                
+
                 if type(temp['date']) == list:
                     Values.append(temp['date'][0])
                     Keys.append('date')
@@ -293,7 +291,7 @@ class Row (object):
                     Keys.append('sheet')
 
                 id = db.insert('code',[Keys,[Values]])
-            
+
             tempID.append(id)
 
         temp['id'] = tempID
@@ -302,7 +300,6 @@ class Row (object):
         else:
             temp['note'] = None
         self.data['code'] = json.dumps(temp)
-
 
     def getCode(self):
         result = {'code':None,'journal':None}
@@ -313,7 +310,6 @@ class Row (object):
         pr = re.findall(t, end)
         pr1 = re.findall(t1, end)
 
-        print(end,'   ||||||||||||  ',pr,pr1)
         listReplace = {
             ' ':'','-АР.1.2':'-АР1.2','КЖО':'КЖ0'
         }
