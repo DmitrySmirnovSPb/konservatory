@@ -61,6 +61,7 @@ class getContent(object):
             index = Sheets.index(self.Sheet)
         else:
             index = 0
+            print('\n*+====================================================================================+')
             print('Лист "'+str(self.Sheet)+'" в файле "'+str(link)+'" не найден!')
             print('Основным листом назначен: "'+str(Sheets[index])+'"')
         self.ExcelObj.initSheet(Sheets[index])

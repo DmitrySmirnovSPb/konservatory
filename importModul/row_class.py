@@ -33,11 +33,12 @@ class Row (object):
     mat = r'[ ,(]\d{,2}[ ]?-?[ ]?\d{1,2}[ ]?[\\/и]{1}[ ]?[А-Я]{0,1}[_/]?Н?[ ]?-?[ ]?[А-Я]{1}[_/]?Н?|[ ,(]\d{,2}[ ]?-?[ ]?\d{1,2}[ ]?[\\/и]{1}[ ]?[А-Я]{0,1}[_/]?Н?[ ]?-?[ ]?[А-Я]{1}[_/]?Н?$|[ ,(][А-Я]{1}[_/]?Н?[ ]?-?[ ]?[А-Я]{0,1}[_/]?Н?[ ]?[\\/и]{1}[ ]?\d{,2}[ ]?-?[ ]?\d{1,2}|[ ,(][А-Я]{1}[_/]?Н?[ ]?-?[ ]?[А-Я]{0,1}[_/]?Н?[ ]?[\\/и]{1}[ ]?\d{,2}[ ]?-?[ ]?\d{1,2}$'
 
     def __init__(self, row: dict):
+        print(row)
         for i in row:
             self.number_Row = i
             self.row = row[i]
         self.replacement = {
-            '\n':' ','. ':'.', 'ао«дока':'ао «дока', 'cк дока':'ск'+self.gap+'дока', '«':'', '»':'','ск ':'','-центр':'','-инжиниринг':'', 'художественно-реставрационная группа ':'','нв билдинг':'нв'+self.gap+'билдинг','ук арт-глас':'арт-глас','"':'','новое время':'новое'+self.gap+'время','политех строй':'политехстрой', 'лепной двор':'лепной'+self.gap+'двор','ван строй':'ванстрой','метеор лифт':'метеор'+self.gap+'лифт', 'политехстрой-сварго':'политехстрой'
+            '\n':' ','. ':'.', 'ао«дока':'ао «дока', 'cк дока':'ск'+self.gap+'дока', '«':'', '»':'','ск ':'','-центр':'','-инжиниринг':'', 'художественно-реставрационная группа ':'','нв билдинг':'нв'+self.gap+'билдинг','ук арт-глас':'арт-глас','"':'','новое время':'новое'+self.gap+'время','политех строй':'политехстрой', 'лепной двор':'лепной'+self.gap+'двор','ван строй':'ванстрой','метеор лифт':'метеор'+self.gap+'лифт', 'политехстрой-сварго':'политехстрой', 'пгс систем':'пгс'+self.gap+'систем', 'янтарная прядь-паркет':'янтарная'+self.gap+'прядь-паркет', 'гранит тех':'гранит'+self.gap+'тех'
         }
         self.get_Init_Data()
         self.printFields()
@@ -59,7 +60,7 @@ class Row (object):
         if self.data['note'] == None:
             self.data['result'] = 1
             return
-        tx = self.data['note'].lower()
+        tx = str(self.data['note']).lower()
         if 'не принято' in tx:
             self.data['result'] = 2
         elif 'не предъявлено' in tx:
@@ -167,6 +168,8 @@ class Row (object):
                 if len(listString) == 3:
                     id = db.insert('people',[['l_name','company_id'],[[listString[2].title(),idContr]]])
                 else:
+                    # print(listString, idContr)
+                    # print(['l_name','initials','company_id'],[[listString[2].title(),listString[3].title(),idContr]])
                     id = db.insert('people',[['l_name','initials','company_id'],[[listString[2].title(),listString[3].title(),idContr]]])
             self.data[key] = id
 
@@ -235,9 +238,13 @@ class Row (object):
 
         temp['date'] = []
         if date != []:
+            listOut = [' ', 'г.', 'г']
             for d in date:
                 data['end'] = data['end'].replace(d, '').replace('от','').strip()
-                d = d.replace(' ', '')
+                for out in listOut:
+                    d = d.replace(out, '')
+                if d[-1] == '.':
+                    d = d[:-1]
                 temp['date'].append(str(datetime.datetime.strptime(d, '%d.%m.%Y')))
         else:
             temp['date'] = None
@@ -306,33 +313,35 @@ class Row (object):
         end = self.row['workingDocumentationColumn']
         t = r'\b001[-/_]12-[КK]-[А-ЯA-Z]+[\. ]*[А-ЯA-Z]*\d*\.*[А-ЯA-Z]*\d*[-\.]?[А-ЯA-Z0-9]*[-\.,]?[А-ЯA-Z0-9]*[-\.,]?[А-ЯA-Z0-9]*\b'
         t1 = r'\b№?\s?\d*\s*в?\s?\bЖАН\s*№?\s*\d*\b'
+        print(end)
+        if end != None:
+            pr = re.findall(t, end)
+            pr1 = re.findall(t1, end)
 
-        pr = re.findall(t, end)
-        pr1 = re.findall(t1, end)
+            listReplace = {
+                ' ':'','-АР.1.2':'-АР1.2','КЖО':'КЖ0'
+            }
+            if pr != []:
+                result['code'] = pr[0]
+                end = end.replace(pr[0], '')
+                for retl in listReplace:
+                    result['code'] = result['code'].replace(retl, listReplace[retl])
+            if pr1 != [] and len(pr1) == 1:
+                result['journal'] = pr1[0]
+                end = end.replace(result['journal'], '')
+            elif len(pr1) > 1:
+                result['journal'] = []
+                for x in pr1:
+                    end = end.replace(x, '')
+                    result['journal'].append(x)
+            if len(end) > 0 and end[0] == ',':
+                end = end[1:]
+            
+            end = end.strip()
 
-        listReplace = {
-            ' ':'','-АР.1.2':'-АР1.2','КЖО':'КЖ0'
-        }
-        if pr != []:
-            result['code'] = pr[0]
-            end = end.replace(pr[0], '')
-            for retl in listReplace:
-                result['code'] = result['code'].replace(retl, listReplace[retl])
-        if pr1 != [] and len(pr1) == 1:
-            result['journal'] = pr1[0]
-            end = end.replace(result['journal'], '')
-        elif len(pr1) > 1:
-            result['journal'] = []
-            for x in pr1:
-                end = end.replace(x, '')
-                result['journal'].append(x)
-        if len(end) > 0 and end[0] == ',':
-            end = end[1:]
-        
-        end = end.strip()
-
-        result['end'] = end
-        
+            result['end'] = end
+        else:
+            result['end'] = ''
         self.getIDCode(result)
 
     def getScopeOfWork(self):
@@ -369,7 +378,7 @@ class Row (object):
 
         db = DB('polytechstroy')
 
-        id = db.select(tableName,{'where':['`name` = "' + name + '"'],'columns':['id']})
+        id = db.select(tableName,{'where':['`name` = "' + db.escapingQuotes(name) + '"'],'columns':['id']})
 
         if id == None:
             id = db.insert(tableName,[['name'],[[name]]])

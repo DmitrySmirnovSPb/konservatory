@@ -12,7 +12,7 @@ if __name__ == '__main__':
 
     match = r'^Отчет №\d*.*\.xlsx$'
 
-    path = '//srv-fs-02.stroy.local/Shares/Консерватория/21. Строительный контроль/Еженедельные отчеты/2024/'
+    path = '//srv-fs-02.stroy.local/Shares/Консерватория/21. Строительный контроль/Еженедельные отчеты/2023/'
 
     rez = sorted(os.listdir(path))
     result = []
@@ -37,9 +37,10 @@ if __name__ == '__main__':
         'note',                         # Столбец с примечаниями
         'dateSED',                      # Столбец с датой предоставления исполнительной документации
         'colCCEngeneer']                # Столбец с именем инженера
-
+    # result = ['Отчет №020 СК по вызову стройконтроля 2024-05-16-05-22.xlsx']
     for item in result:
         scheduledCall = True            # Вызов по графику
+
         gc = CC_Report(link = item, globalLink = path, Sheet = 'Отчёт', nameDB = 'polytechstroy')
 
         report = Report({})
@@ -65,7 +66,7 @@ if __name__ == '__main__':
             if gc.Content[row][gc.columnNumber] == 'Вне графика' and flag:
                 flag = False
                 continue
-            print('\n+----------------------------------------------------------------------+\n')
+            print(f'\n+-- {item} --+\n')
             name = gc.Content[row][gc.columnName]
             tempDict = {'number':idReport,'in_the_chart':flag}
             for key in listick:
@@ -77,9 +78,10 @@ if __name__ == '__main__':
             tempDict['number_in_b_estimate'] = gc.Content[row][getattr(gc,'numberInBEstimate')]
 
             rowClass = Row({row:tempDict})
-            if row > 34:
-                exit(0)
-        exit(0)
+        #     if row > 34:
+        #         print("--- %s секунд ---" %(time.time() - start_time))
+        #         exit(0)
+        # exit(0)
 
     # Время выполнения скрипта
     print("--- %s секунд ---" %(time.time() - start_time))

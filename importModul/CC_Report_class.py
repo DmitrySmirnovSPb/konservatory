@@ -28,11 +28,11 @@ class CC_Report(getContent):
 
     def getNumberAndDate(self):
         List = [
-            [r'^ОТЧЁТ №\d+ ',['colNumReport', 'rowNumReport']],         # Координаты ячейки с номером и датой отчёта
+            [r'^ОТЧЁТ №\s?\d+ ',['colNumReport', 'rowNumReport']],      # Координаты ячейки с номером и датой отчёта
             [r'за период с',['colDateReport', 'rowDateReport']],        # Координаты ячейки с датами начала и окончания периода отчёта
             [r'к освидетельствованию',['columnName']],                  # Столбец с названием работ и материалов
             [r'^№ п/п вызова$',['number_the_Customer']],                # Столбец с номером по порядку из вызова Заказчика
-            [r'^№ пункта сметы контракта$',['numberInBEstimate']],   # Столбеч с номером пункта из сметы контракта
+            [r'^№ пункта сметы контракта$',['numberInBEstimate']],      # Столбец с номером пункта из сметы контракта
             [r'^№ заявки$',['call_Customer']],                          # Столбец с номером заявки вызова заказчика
             [r'^№ п/п$',['columnNumber']],                              # Столбец с номера по порядку в отчёте
             [r'^Ед.+ измер.+$',['unitOfMeasurement']],                  # Столбец с единицами измерения
@@ -67,7 +67,7 @@ class CC_Report(getContent):
                         setattr(self, field[1][0], column)
                         if field[1][0] == 'fact': setattr(self, 'startRow', row + 2)
             if self.rowNumReport != 0 and self.rowDateReport != 0 and self.columName != 0: break
-        self.number = int(re.findall(r'\d+',re.findall(r'№\d+\b', self.Content[self.rowNumReport][self.colNumReport])[0])[0])
+        self.number = int(re.findall(r'\d+',re.findall(r'№\s?\d+\b', self.Content[self.rowNumReport][self.colNumReport])[0])[0])
         self.date = dt.strptime(re.findall(r'\d+\.\d+\.\d+', self.Content[self.rowNumReport][self.colNumReport])[0], r'%d.%m.%Y')
         listDate = re.findall(r'\d+\.\d+\.\d+', self.Content[self.rowDateReport][self.colDateReport])
         self.date_start  = dt.strptime(listDate[0], r'%d.%m.%Y')
