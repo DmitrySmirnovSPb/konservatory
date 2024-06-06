@@ -12,17 +12,18 @@ if __name__ == '__main__':
 
     match = r'^Отчет №\d*.*\.xlsx$'
 
-    path = '//srv-fs-02.stroy.local/Shares/Консерватория/21. Строительный контроль/Еженедельные отчеты/2023/'
+    path = '//srv-fs-02.stroy.local/Shares/Консерватория/21. Строительный контроль/Еженедельные отчеты/2024/'
 
-    rez = sorted(os.listdir(path))
+    rez = os.listdir(path)
     result = []
-
+    # Считывание всех файлов а папке path и поиск файла с отчётом
     for string in rez:
         temp = re.search(match, string)
         if temp:
             result.append(temp[0])
     result.sort()
-
+    # for t in result: print(t)
+    # exit(0)
     listick = ['columnNumber',          # Столбец с номера по порядку в отчёте
         'columnName',                   # Столбец с названием работ и материалов
         'call_Customer',                # Столбец с номером заявки вызова заказчика
@@ -37,7 +38,7 @@ if __name__ == '__main__':
         'note',                         # Столбец с примечаниями
         'dateSED',                      # Столбец с датой предоставления исполнительной документации
         'colCCEngeneer']                # Столбец с именем инженера
-    # result = ['Отчет №020 СК по вызову стройконтроля 2024-05-16-05-22.xlsx']
+    result = ['Отчет №014 СК по вызову стройконтроля 2024-04-04-04-010.xlsx']
     for item in result:
         scheduledCall = True            # Вызов по графику
 
@@ -54,6 +55,7 @@ if __name__ == '__main__':
 
 # Запись в БД report, проверка существоания записи по дате отчёта
         idReport = report.checkingTheRecord()
+
         if idReport == False:
             idReport = report.makingAnEntry() 
 
@@ -66,7 +68,7 @@ if __name__ == '__main__':
             if gc.Content[row][gc.columnNumber] == 'Вне графика' and flag:
                 flag = False
                 continue
-            print(f'\n+-- {item} --+\n')
+            # print(f'\n+-- {item} --+\n')
             name = gc.Content[row][gc.columnName]
             tempDict = {'number':idReport,'in_the_chart':flag}
             for key in listick:

@@ -33,7 +33,7 @@ class Row (object):
     mat = r'[ ,(]\d{,2}[ ]?-?[ ]?\d{1,2}[ ]?[\\/и]{1}[ ]?[А-Я]{0,1}[_/]?Н?[ ]?-?[ ]?[А-Я]{1}[_/]?Н?|[ ,(]\d{,2}[ ]?-?[ ]?\d{1,2}[ ]?[\\/и]{1}[ ]?[А-Я]{0,1}[_/]?Н?[ ]?-?[ ]?[А-Я]{1}[_/]?Н?$|[ ,(][А-Я]{1}[_/]?Н?[ ]?-?[ ]?[А-Я]{0,1}[_/]?Н?[ ]?[\\/и]{1}[ ]?\d{,2}[ ]?-?[ ]?\d{1,2}|[ ,(][А-Я]{1}[_/]?Н?[ ]?-?[ ]?[А-Я]{0,1}[_/]?Н?[ ]?[\\/и]{1}[ ]?\d{,2}[ ]?-?[ ]?\d{1,2}$'
 
     def __init__(self, row: dict):
-        print(row)
+        # print(row)
         for i in row:
             self.number_Row = i
             self.row = row[i]
@@ -41,7 +41,7 @@ class Row (object):
             '\n':' ','. ':'.', 'ао«дока':'ао «дока', 'cк дока':'ск'+self.gap+'дока', '«':'', '»':'','ск ':'','-центр':'','-инжиниринг':'', 'художественно-реставрационная группа ':'','нв билдинг':'нв'+self.gap+'билдинг','ук арт-глас':'арт-глас','"':'','новое время':'новое'+self.gap+'время','политех строй':'политехстрой', 'лепной двор':'лепной'+self.gap+'двор','ван строй':'ванстрой','метеор лифт':'метеор'+self.gap+'лифт', 'политехстрой-сварго':'политехстрой', 'пгс систем':'пгс'+self.gap+'систем', 'янтарная прядь-паркет':'янтарная'+self.gap+'прядь-паркет', 'гранит тех':'гранит'+self.gap+'тех'
         }
         self.get_Init_Data()
-        self.printFields()
+        # self.printFields()
     
     def get_Init_Data(self):
         self.data_Transfer()
@@ -55,6 +55,7 @@ class Row (object):
         self.getCode()
         self.nameID()
         self.getScopeOfWork()
+        self.setRowToDB()
 
     def getResult(self):
         if self.data['note'] == None:
@@ -313,7 +314,7 @@ class Row (object):
         end = self.row['workingDocumentationColumn']
         t = r'\b001[-/_]12-[КK]-[А-ЯA-Z]+[\. ]*[А-ЯA-Z]*\d*\.*[А-ЯA-Z]*\d*[-\.]?[А-ЯA-Z0-9]*[-\.,]?[А-ЯA-Z0-9]*[-\.,]?[А-ЯA-Z0-9]*\b'
         t1 = r'\b№?\s?\d*\s*в?\s?\bЖАН\s*№?\s*\d*\b'
-        print(end)
+        # print(end)
         if end != None:
             pr = re.findall(t, end)
             pr1 = re.findall(t1, end)
@@ -351,7 +352,7 @@ class Row (object):
         db = DB('polytechstroy')
         id = db.select('dimension',{'where':['`name` = "' + str(self.row['unitOfMeasurement']) + '"'],'columns':['id']})
         if id == None:
-            multiplicity = re.findall(r'\b\d+\b', self.row['unitOfMeasurement'])
+            multiplicity = re.findall(r'\b\d+\b', str(self.row['unitOfMeasurement']))
             if len(multiplicity) == 0:
                 mult = 1
             else:
@@ -384,3 +385,6 @@ class Row (object):
             id = db.insert(tableName,[['name'],[[name]]])
         
         return id
+
+    def setRowToDB(self):
+        print('внесение данных в DB')
