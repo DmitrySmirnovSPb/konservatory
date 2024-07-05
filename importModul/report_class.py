@@ -45,6 +45,9 @@ class Report(object):
 
     def makingAnEntry(self):                # Занесение записи в базу данных
         if len(self.error) != 0:
+            print('\n',self.error,'\n')
+            for d in self.data:
+                print(d, '=>', self.data[d])
             return False
         id = False
         try:

@@ -12,8 +12,8 @@ if __name__ == '__main__':
 
     match = r'^Отчет №\d*.*\.xlsx$'
 
-    path = '//srv-fs-02.stroy.local/Shares/Консерватория/21. Строительный контроль/Еженедельные отчеты/2024/'
-
+    path = '//srv-fs-02.stroy.local/Shares/Консерватория/21. Строительный контроль/Еженедельные отчеты/2023/'
+    # path = 'C:\\Users\\d.smirnov\\Documents\\отчёт\\2023\\'
     rez = os.listdir(path)
     result = []
     # Считывание всех файлов а папке path и поиск файла с отчётом
@@ -38,7 +38,7 @@ if __name__ == '__main__':
         'note',                         # Столбец с примечаниями
         'dateSED',                      # Столбец с датой предоставления исполнительной документации
         'colCCEngeneer']                # Столбец с именем инженера
-    result = ['Отчет №014 СК по вызову стройконтроля 2024-04-04-04-010.xlsx']
+    # result = ['Отчет №025 СК по вызову стройконтроля 2024-06-20-06-26.xlsx']
     for item in result:
         scheduledCall = True            # Вызов по графику
 
@@ -53,14 +53,16 @@ if __name__ == '__main__':
             except:
                 report.data[key] = None
 
-# Запись в БД report, проверка существоания записи по дате отчёта
+# Запись в БД report, проверка существования записи по дате отчёта
         idReport = report.checkingTheRecord()
-
         if idReport == False:
-            idReport = report.makingAnEntry() 
+            idReport = report.makingAnEntry()
 
         if idReport != False:
-            if len(gc.db.anyRequest('SELECT `id` FROM `сс_accepted_volumes` WHERE `number` = %s;'%idReport)) > 0:
+            temp =gc.db.selectAll('сс_accepted_volumes',{'columns':['id'], 'where':['`number` = ' + str(idReport)]})
+            print("set DB", temp[0])
+
+            if temp[0] != None:
                 continue
 
         flag = True
@@ -73,13 +75,12 @@ if __name__ == '__main__':
             tempDict = {'number':idReport,'in_the_chart':flag}
             for key in listick:
                 try:
-                    tempDict[key] = gc.Content[row][getattr(gc,key)]
+                    tempDict[key] = gc.Content[row][getattr(gc,key)] 
                 except:
                     tempDict[key] = None
             tempDict['number_in_order'] = gc.Content[row][getattr(gc,'columnNumber')]
             tempDict['number_in_b_estimate'] = gc.Content[row][getattr(gc,'numberInBEstimate')]
-
-            rowClass = Row({row:tempDict})
+            rowClass = Row({row:tempDict}, gc.db)
         #     if row > 34:
         #         print("--- %s секунд ---" %(time.time() - start_time))
         #         exit(0)

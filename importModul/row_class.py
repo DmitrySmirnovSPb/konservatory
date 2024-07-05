@@ -28,11 +28,14 @@ class Row (object):
         'note':None                     ### Примечания к записи
     }
 
+    error = 1
+
     gap = '#^~'
 
     mat = r'[ ,(]\d{,2}[ ]?-?[ ]?\d{1,2}[ ]?[\\/и]{1}[ ]?[А-Я]{0,1}[_/]?Н?[ ]?-?[ ]?[А-Я]{1}[_/]?Н?|[ ,(]\d{,2}[ ]?-?[ ]?\d{1,2}[ ]?[\\/и]{1}[ ]?[А-Я]{0,1}[_/]?Н?[ ]?-?[ ]?[А-Я]{1}[_/]?Н?$|[ ,(][А-Я]{1}[_/]?Н?[ ]?-?[ ]?[А-Я]{0,1}[_/]?Н?[ ]?[\\/и]{1}[ ]?\d{,2}[ ]?-?[ ]?\d{1,2}|[ ,(][А-Я]{1}[_/]?Н?[ ]?-?[ ]?[А-Я]{0,1}[_/]?Н?[ ]?[\\/и]{1}[ ]?\d{,2}[ ]?-?[ ]?\d{1,2}$'
 
-    def __init__(self, row: dict):
+    def __init__(self, row: dict, db:DB):
+        self.db = db
         # print(row)
         for i in row:
             self.number_Row = i
@@ -139,14 +142,14 @@ class Row (object):
             'id_CC_engineer':'colCCEngeneer'
         }
 
-        db = DB('polytechstroy')
+        # db = DB('polytechstroy')
 
         for key, value in list_Dict.items():
             string = self.row[value]
             if string == None: return None
 
             if value == 'colCCEngeneer':
-                self.data[key] = self.getEngineerCC(string, db)
+                self.data[key] = self.getEngineerCC(string)
                 break
             listString = string.split('«')
             temp = list()
@@ -163,23 +166,23 @@ class Row (object):
             if len(listString) <= 2:
                 id = 0 # id равен 0 при отсутствии фамилии и имени человека
             else:
-                id = db.select('people',{'where':['`l_name` = "'+listString[2]+'"'],'columns':['id']})
+                id = self.db.select('people',{'where':['`l_name` = "'+listString[2]+'"'],'columns':['id']})
             if id == None:
-                idContr = db.select('contractor',{'where':['`name` = "'+listString[1]+'"'],'columns':['id']})
+                idContr = self.db.select('contractor',{'where':['`name` = "'+listString[1]+'"'],'columns':['id']})
                 if len(listString) == 3:
-                    id = db.insert('people',[['l_name','company_id'],[[listString[2].title(),idContr]]])
+                    id = self.db.insert('people',[['l_name','company_id'],[[listString[2].title(),idContr]]])
                 else:
                     # print(listString, idContr)
                     # print(['l_name','initials','company_id'],[[listString[2].title(),listString[3].title(),idContr]])
-                    id = db.insert('people',[['l_name','initials','company_id'],[[listString[2].title(),listString[3].title(),idContr]]])
+                    id = self.db.insert('people',[['l_name','initials','company_id'],[[listString[2].title(),listString[3].title(),idContr]]])
             self.data[key] = id
 
-    def getEngineerCC(self, name, db):
+    def getEngineerCC(self, name):
 
         if name == None: return None
 
         name = name.split()[0]
-        id = db.select('people',{'where':['`l_name` = "' + name + '"'],'columns':['id']})
+        id = self.db.select('people',{'where':['`l_name` = "' + name + '"'],'columns':['id']})
 
         return id
 
@@ -189,9 +192,6 @@ class Row (object):
             string = string.replace(old,new)
 
         return string
-
-    def get_result(self):
-        return self.data
 
     def printFields(self):
         print('self.data =====>')
@@ -210,7 +210,7 @@ class Row (object):
         if len(altitude_mark) > 0:
             self.data['floor']['altitude_mark'] = altitude_mark
         if 'подвал' in text:
-            self.data['floor']['floor'] = [-1]
+            self.data['floor']=json.dumps({'floor': [-1]})
             return
         mach_2 = r'\d?\s?эт\.?.*'
         temp = re.findall(mach_2, text)
@@ -226,6 +226,7 @@ class Row (object):
         temp = json.loads(self.data['room'])
         if len(self.data['floor']) == 0 and len(temp) > 0:
             self.data['floor']['floor'] = int(temp[0].split('.')[0])
+        self.data['floor'] = json.dumps(self.data['floor'])
 
     def getDates(self):
 
@@ -281,11 +282,10 @@ class Row (object):
         COP = [x for x in tmp if x != ''] # список шифров проекта или ЖАН
 
         tempID = []
-        db = DB('polytechstroy')
 
         for x in COP:
             where = '`code` = "'+ x +'"'
-            id = db.select('code',{'where':[where],'columns':['id']})
+            id = self.db.select('code',{'where':[where],'columns':['id']})
 
             if id == None:
                 Values =[x]
@@ -298,7 +298,7 @@ class Row (object):
                     Values.append(temp['sheet'][0])
                     Keys.append('sheet')
 
-                id = db.insert('code',[Keys,[Values]])
+                id = self.db.insert('code',[Keys,[Values]])
 
             tempID.append(id)
 
@@ -347,18 +347,8 @@ class Row (object):
 
     def getScopeOfWork(self):
 
-        self.data['value'] = self.row['countColumn']        # Количество фактически принятых работ
-
-        db = DB('polytechstroy')
-        id = db.select('dimension',{'where':['`name` = "' + str(self.row['unitOfMeasurement']) + '"'],'columns':['id']})
-        if id == None:
-            multiplicity = re.findall(r'\b\d+\b', str(self.row['unitOfMeasurement']))
-            if len(multiplicity) == 0:
-                mult = 1
-            else:
-                mult = int(multiplicity[0])
-            id = db.insert('dimension',[['name','multiplicity'],[[self.row['unitOfMeasurement'],mult]]])
-        self.data['dimension'] = id
+        self.data['value'] = self.row['countColumn']                                    # Количество фактически принятых работ
+        self.data['dimension'] = self.getDimension(str(self.row['unitOfMeasurement']))  # ID размерности
     
     def nameID(self):
 
@@ -377,14 +367,51 @@ class Row (object):
 
     def getID(self, tableName: str, name: str):
 
-        db = DB('polytechstroy')
-
-        id = db.select(tableName,{'where':['`name` = "' + db.escapingQuotes(name) + '"'],'columns':['id']})
+        id = self.db.select(tableName,{'where':['`name` = "' + self.db.escapingQuotes(name) + '"'],'columns':['id']})
 
         if id == None:
-            id = db.insert(tableName,[['name'],[[name]]])
+            id = self.db.insert(tableName,[['name'],[[name]]])
         
         return id
 
     def setRowToDB(self):
-        print('внесение данных в DB')
+        # print('Занесение строки в БД')
+        listFieds = list(self.data.keys())
+        listValues = list(self.data.values())
+        try:
+            return self.db.insert('сс_accepted_volumes',[listFieds, [listValues]])
+        except Exception as e:
+            print('\n',e,'\n', self.data)
+            self.errorСorrection()
+    
+    def errorСorrection(self):
+        for key in self.data:
+            print(type(self.data[key]),'\t\t\t',key,'\t\t',self.data[key])
+        if '/' in self.data['value']:
+            lst = self.data['value'].split('/')#.append(self.data['value'].split('/'))
+            lst_res = []
+            for i in lst:
+                lst_res.append(float(i.replace(',','.')))
+            dimension = self.db.select('dimension',{'columns':['name'],'where':['id = '+str(self.data['dimension'])]}).split('/')
+            print(dimension, lst_res)
+            self.data['note'] = str(lst_res[1]) + ' ' + dimension[1] + ('\n' + str(self.data['note']) if self.data['note'] != None else '')
+            self.data['dimension'] = self.getDimension(dimension[0])
+            self.data['value'] = float(lst_res[0])
+        elif ',' in self.data['value']:
+            self.data['value'] = float(self.data['value'].replace(',','.'))
+        self.error += 1
+        if self.error > 10 :
+            print('ERROR')
+            exit(1)
+        self.setRowToDB()
+
+    def getDimension(self, dim: str):
+        id = self.db.select('dimension',{'where':['`name` = "' + dim + '"'],'columns':['id']})
+        if id == None:
+            multiplicity = re.findall(r'\b\d+\b', str(self.row['unitOfMeasurement']))
+            if len(multiplicity) == 0:
+                mult = 1
+            else:
+                mult = int(multiplicity[0])
+            id = self.db.insert('dimension',[['name','multiplicity'],[[self.row['unitOfMeasurement'],mult]]])
+        return id
