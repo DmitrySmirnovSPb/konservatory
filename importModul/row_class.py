@@ -34,9 +34,11 @@ class Row (object):
 
     mat = r'[ ,(]\d{,2}[ ]?-?[ ]?\d{1,2}[ ]?[\\/и]{1}[ ]?[А-Я]{0,1}[_/]?Н?[ ]?-?[ ]?[А-Я]{1}[_/]?Н?|[ ,(]\d{,2}[ ]?-?[ ]?\d{1,2}[ ]?[\\/и]{1}[ ]?[А-Я]{0,1}[_/]?Н?[ ]?-?[ ]?[А-Я]{1}[_/]?Н?$|[ ,(][А-Я]{1}[_/]?Н?[ ]?-?[ ]?[А-Я]{0,1}[_/]?Н?[ ]?[\\/и]{1}[ ]?\d{,2}[ ]?-?[ ]?\d{1,2}|[ ,(][А-Я]{1}[_/]?Н?[ ]?-?[ ]?[А-Я]{0,1}[_/]?Н?[ ]?[\\/и]{1}[ ]?\d{,2}[ ]?-?[ ]?\d{1,2}$'
 
-    def __init__(self, row: dict, db:DB):
+    
+
+    def __init__(self, row: dict, db:DB, check:bool):
         self.db = db
-        # print(row)
+        self.check = check
         for i in row:
             self.number_Row = i
             self.row = row[i]
@@ -58,7 +60,10 @@ class Row (object):
         self.getCode()
         self.nameID()
         self.getScopeOfWork()
-        self.setRowToDB()
+        if self.check:
+            self.checkRowToDB()
+        else:
+            self.setRowToDB()
 
     def getResult(self):
         if self.data['note'] == None:
@@ -192,6 +197,20 @@ class Row (object):
             string = string.replace(old,new)
 
         return string
+
+    def checkRowToDB(self):
+        print("data",self.data)
+        result = {}
+        tempListColumn =self.db.selectAll('сс_accepted_volumes',{'where':['`number` = "' + str(self.data['number']) + '" AND `number_in_order` = "' + str(self.data['number_in_order']) + '"'],'columns':['*']})[0]
+        # print()
+        print(f'{"select":=^80}')
+        for column, value in zip([i[0] for i in self.db.getListColumns('сс_accepted_volumes')], tempListColumn):
+            result[column] = value
+        for key in result:
+            value = result[key]
+            t1 = f'{"%s"%value:>60}'
+            print(f'{key: <20}' + t1)
+        exit()
 
     def printFields(self):
         print('self.data =====>')
