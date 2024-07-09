@@ -32,10 +32,11 @@ class Report(object):
         self.table = 'report'
 
     def checkingTheRecord(self):            # Проверка на наличее записи в базе данных воврвщает ID или False
-        
+
         id = self.db.select(self.table, {'where':['`date` = "%s"'%self.data['date']],'columns':['id']})
-        if id != None: return id
-        return False
+        if id == None:
+            id = self.makingAnEntry()
+        return id
 
     def delError(self, key):
         try:
@@ -55,6 +56,9 @@ class Report(object):
             print(id)
         except:
             print('mysql.connector.errors.IntegrityError')
+            for field in self.filds:
+                print(field, '-->',getattr(self, field))
+            exit()
         return id
     
     def update(self, id:int):               # Изменение записи с ID = id в базе данных

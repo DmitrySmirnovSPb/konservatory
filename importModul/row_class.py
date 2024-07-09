@@ -401,8 +401,8 @@ class Row (object):
             self.data['value'] = float(self.data['value'].replace(',','.'))
         self.error += 1
         if self.error > 10 :
-            print('ERROR')
-            exit(1)
+            print('ERROR'+str(self.error))
+            exit('ERROR! The limits of attempts to process error in errorCorrection() has been exceeded.')
         self.setRowToDB()
 
     def getDimension(self, dim: str):

@@ -8,11 +8,9 @@ class Excel(object):
         try:
             self.wb = load_workbook(link)
             self.error = None
-        except:
-            self.error = "Файл по адресу " + link + " не удалось открыть"
+        except AttributeError as e:
             print()
-            print(self.error)
-            print()
+            exit(e)
 # Инициация листа по названию sheetName
     def initSheet(self, sheetName: str):
         self.Sheet = self.getSheeltByName(sheetName)
