@@ -1,7 +1,8 @@
 import sys, os, json, time, re
-print(os.getcwd() + '\\importModul\\')
-sys.path.append(os.getcwd() + '\\importModul\\')
-from call_class import Call_Customer
+sys.path.append(os.getcwd() + '/')
+from importModul.CC_Report_class import CC_Report
+from importModul.row_class import Row
+from importModul.report_class import Report
 
 if __name__ == '__main__':
 
@@ -9,7 +10,7 @@ if __name__ == '__main__':
 
     finalityDict = dict()
 
-    match = r'^\d\d ЗАЯВКА на вызов заказчика.*\.xlsx$'
+    match = r'^Отчет №\d*.*\.xlsx$'
     listick = ['columnNumber',          # Столбец с номера по порядку в отчёте
         'columnName',                   # Столбец с названием работ и материалов
         'call_Customer',                # Столбец с номером заявки вызова заказчика
@@ -27,11 +28,12 @@ if __name__ == '__main__':
 
     start = 23
     finish =24
-    theMainLink = '\\\\srv-fs-02.stroy.local\\Shares\\Консерватория\\21. Строительный контроль\\Графики вызова Заказчика\\'
+    theMainLink = '\\\\srv-fs-02.stroy.local\\Shares\\Консерватория\\21. Строительный контроль\\Еженедельные отчеты\\'
 
     for year in range(start, finish + 1):
 
-        path = theMainLink + '_20%s вызов заказчика\\'%year
+        path = theMainLink + '20%s\\'%year
+        # path = 'C:\\Users\\d.smirnov\\Documents\\отчёт\\2023\\'
         rez = os.listdir(path)
         result = []
         # Считывание всех файлов а папке path и поиск файла с отчётом
@@ -40,14 +42,16 @@ if __name__ == '__main__':
             if temp:
                 result.append(temp[0])
         result.sort()
-        # for link in result:
-        #     print(link)
-
+        # for t in result: print(t)
+        # exit(0)
         # result = ['Отчет №025 СК по вызову стройконтроля 2024-06-20-06-26.xlsx']
         for item in result:
+            scheduledCall = True            # Вызов по графику
 
-            gc = Call_Customer(link = item, globalLink = path, Sheet = '', nameDB = 'polytechstroy')
-            exit(0)
+            gc = CC_Report(link = item, globalLink = path, Sheet = 'Отчёт', nameDB = 'polytechstroy')
+
+            report = Report({})
+
             for key in report.data:
                 try:
                     report.data[key] = getattr(gc, key)

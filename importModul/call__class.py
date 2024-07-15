@@ -1,6 +1,6 @@
 import sys, re, json, os
-sys.path.append('C:/project/konservatory/data/')
-sys.path.append('C:/project/konservatory/importModul/')
+sys.path.append(os.getcwd() +'\\data\\')
+sys.path.append(os.getcwd() +'\\importModul\\')
 
 from DB_class import DB
 import write_class
@@ -8,7 +8,7 @@ from excel_class import Excel
 from importModul.get import getContent
 from datetime import datetime as dt
 
-class CC_Report(getContent):
+class Call_Customer(getContent):
 
     rowNumReport, colNumReport = 0, 0
     rowDateReport, colDateReport = 0, 0
@@ -28,22 +28,18 @@ class CC_Report(getContent):
 
     def getNumberAndDate(self):
         List = [
-            [r'^ОТЧЁТ №\s?\d+ ',['colNumReport', 'rowNumReport']],      # Координаты ячейки с номером и датой отчёта
-            [r'за период с',['colDateReport', 'rowDateReport']],        # Координаты ячейки с датами начала и окончания периода отчёта
+            [r' период с',['colDateReport', 'rowDateReport']],        # Координаты ячейки с датами начала и окончания периода отчёта
             [r'к освидетельствованию',['columnName']],                  # Столбец с названием работ и материалов
-            [r'^№ п/п вызова$',['number_the_Customer']],                # Столбец с номером по порядку из вызова Заказчика
             [r'^№ пункта сметы контракта$',['numberInBEstimate']],      # Столбец с номером пункта из сметы контракта
-            [r'^№ заявки$',['call_Customer']],                          # Столбец с номером заявки вызова заказчика
-            [r'^№ п/п$',['columnNumber']],                              # Столбец с номера по порядку в отчёте
+            [r'^№ п/п$',['columnNumber']],                              # Столбец с номера по порядку в заявке
             [r'^Ед.+ измер.+$',['unitOfMeasurement']],                  # Столбец с единицами измерения
             [r'^Кол.*во$',['countColumn']],                             # Столбец с количеством
             [r'^Рабочая документация:',['workingDocumentationColumn']], # Столбец с шифром проекта или запись в ЖАН
-            [r'^План$',['plane']],                                      # Столбец с планированной датой предъявления работ
-            [r'^Факт$',['fact']],                                       # Столбец с фактической датой предъявления
+            [r'^Дата$',['plane']],                                      # Столбец с планированной датой предъявления работ
             [r'^Субподрядчик:',['contractor_sRepresentative']],         # Столбец субподрядчика
             [r'^Исполнитель:',['executor']],                            # Столбец исполнителя
             [r'^Примечания',['note']],                                  # Столбец с примечаниями
-            [r'исп.докум.',['dateSED']]                                 # Столбец с датой предоставления исполнительной документации
+
         ]
 #
 #         Через цикл

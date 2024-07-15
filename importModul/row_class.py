@@ -177,8 +177,8 @@ class Row (object):
                 if len(listString) == 3:
                     id = self.db.insert('people',[['l_name','company_id'],[[listString[2].title(),idContr]]])
                 else:
-                    # print(listString, idContr)
-                    # print(['l_name','initials','company_id'],[[listString[2].title(),listString[3].title(),idContr]])
+                    print(listString, idContr)
+                    print(['l_name','initials','company_id'],[[listString[2].title(),listString[3].title(),idContr]])
                     id = self.db.insert('people',[['l_name','initials','company_id'],[[listString[2].title(),listString[3].title(),idContr]]])
             self.data[key] = id
 
@@ -199,18 +199,21 @@ class Row (object):
         return string
 
     def checkRowToDB(self):
-        print("data",self.data)
+        
         result = {}
-        tempListColumn =self.db.selectAll('сс_accepted_volumes',{'where':['`number` = "' + str(self.data['number']) + '" AND `number_in_order` = "' + str(self.data['number_in_order']) + '"'],'columns':['*']})[0]
-        # print()
-        print(f'{"select":=^80}')
-        for column, value in zip([i[0] for i in self.db.getListColumns('сс_accepted_volumes')], tempListColumn):
-            result[column] = value
-        for key in result:
-            value = result[key]
-            t1 = f'{"%s"%value:>60}'
-            print(f'{key: <20}' + t1)
-        exit()
+        tempListColumn =self.db.selectAll('сс_accepted_volumes',{'where':['`number` = "' + str(self.data['number']) + '" AND `number_in_order` = "' + str(self.data['number_in_order']) + '" AND `name_id` = '+ str(self.data['name_id'])],'columns':['*']})[0]
+        if tempListColumn == None:
+            print('Ошибка! Не найдена запись: ID отчёта', self.data['number'], 'Номер строки:',self.data['number_in_order'])
+            id = self.setRowToDB()
+            print('В БД занесена строка с id', id)
+
+        else:
+            for column, value in zip([i[0] for i in self.db.getListColumns('сс_accepted_volumes')], tempListColumn):
+                result[column] = value
+            del result['id']
+            for key in result:
+                if result[key] != self.data[key]:
+                    print(f'{key:50} было:{result[key]}, стало: {self.data[key]}')
 
     def printFields(self):
         print('self.data =====>')
@@ -249,8 +252,12 @@ class Row (object):
 
     def getDates(self):
 
-        self.data['date_of_the_call'] = self.row['plane']   # Дата предъявления объёмов по графику
-        self.data['actual_date'] = self.row['fact'] if '---' not in str(self.row['fact']) else None         # Фактическая дата приёмки
+        self.data['date_of_the_call'] = self.row['plane'].date() if type(self.row['plane']) == datetime.datetime else None   # Дата предъявления объёмов по графику
+        try:
+            self.data['actual_date'] = None if '---' in str(self.row['fact']) or self.row['fact'] == None else self.row['fact'].date()         # Фактическая дата приёмки
+        except Exception as e:
+            print(self.row['fact'], e)
+            print(self.data["number"], self.data['number_in_order'])
 
     def getIDCode(self, data):
         temp = {}
@@ -405,7 +412,7 @@ class Row (object):
     
     def errorСorrection(self):
         for key in self.data:
-            print(type(self.data[key]),'\t\t\t',key,'\t\t',self.data[key])
+            print(f'{type(self.data[key]):30}',f'{key:12}',self.data[key])
         if '/' in self.data['value']:
             lst = self.data['value'].split('/')#.append(self.data['value'].split('/'))
             lst_res = []
