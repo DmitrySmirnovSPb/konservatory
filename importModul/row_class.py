@@ -411,8 +411,8 @@ class Row (object):
             self.errorСorrection()
     
     def errorСorrection(self):
-        for key in self.data:
-            print(f'{type(self.data[key]):30}',f'{key:12}',self.data[key])
+        # for key in self.data:
+        #     print(f'{type(self.data[key]):30}',f'{key:12}',self.data[key])
         if '/' in self.data['value']:
             lst = self.data['value'].split('/')#.append(self.data['value'].split('/'))
             lst_res = []
@@ -432,12 +432,12 @@ class Row (object):
         self.setRowToDB()
 
     def getDimension(self, dim: str):
-        id = self.db.select('dimension',{'where':['`name` = "' + dim + '"'],'columns':['id']})
+        id = self.db.select('dimension',{'where':['`name` = "' + dim.strip() + '"'],'columns':['id']})
         if id == None:
             multiplicity = re.findall(r'\b\d+\b', str(self.row['unitOfMeasurement']))
             if len(multiplicity) == 0:
                 mult = 1
             else:
                 mult = int(multiplicity[0])
-            id = self.db.insert('dimension',[['name','multiplicity'],[[self.row['unitOfMeasurement'],mult]]])
+            id = self.db.insert('dimension',[['name','multiplicity'],[[self.row['unitOfMeasurement'].strip(),mult]]])
         return id

@@ -5,13 +5,11 @@ sys.path.append(os.getcwd() +'\\importModul\\')
 from DB_class import DB
 import write_class
 from excel_class import Excel
-from importModul.get import getContent
+from get import getContent
 from datetime import datetime as dt
 
 class Call_Customer(getContent):
 
-    rowNumReport, colNumReport = 0, 0
-    rowDateReport, colDateReport = 0, 0
     columName = 0
     number_СС_Report = 0
     note = 0
@@ -25,14 +23,15 @@ class Call_Customer(getContent):
             '\n':' ','. ':'.', 'ао«дока':'ао «дока', 'cк дока':'ск'+self.gap+'дока', '«':'', '»':'','ск ':'','-центр':'', '-сварго':'','-инжиниринг':'', 'художественно-реставрационная группа ':'','нв билдинг':'нв'+self.gap+'билдинг','ук арт-глас':'арт-глас','"':'','новое время':'новое'+self.gap+'время','политех строй':'политехстрой', 'лепной двор':'лепной'+self.gap+'двор','ван строй':'ванстрой','метеор лифт':'метеор'+self.gap+'лифт', 'ип хомченко':'ип'+self.gap+'хомченко'
         }
         self.end = self.getEndData()
+        self.date()
 
     def getNumberAndDate(self):
         List = [
-            [r' период с',['colDateReport', 'rowDateReport']],        # Координаты ячейки с датами начала и окончания периода отчёта
+            [r' период с',['colDateReport', 'rowDateReport']],          # Координаты ячейки с датами начала и окончания периода отчёта
             [r'к освидетельствованию',['columnName']],                  # Столбец с названием работ и материалов
             [r'^№ пункта сметы контракта$',['numberInBEstimate']],      # Столбец с номером пункта из сметы контракта
             [r'^№ п/п$',['columnNumber']],                              # Столбец с номера по порядку в заявке
-            [r'^Ед.+ измер.+$',['unitOfMeasurement']],                  # Столбец с единицами измерения
+            [r'^Ед. измер.+$',['unitOfMeasurement']],                   # Столбец с единицами измерения
             [r'^Кол.*во$',['countColumn']],                             # Столбец с количеством
             [r'^Рабочая документация:',['workingDocumentationColumn']], # Столбец с шифром проекта или запись в ЖАН
             [r'^Дата$',['plane']],                                      # Столбец с планированной датой предъявления работ
@@ -41,43 +40,26 @@ class Call_Customer(getContent):
             [r'^Примечания',['note']],                                  # Столбец с примечаниями
 
         ]
-#
-#         Через цикл
-#         setattr(self, 'note', 'value')
-#----------------------------------------------------------------------------------------#
-#         getattr(obj, name [, default]) — для доступа к атрибуту объекта.
-#         hasattr(obj, name) — проверить, есть ли в obj атрибут name.
-#         setattr(obj, name, value) — задать атрибут. Если атрибут не существует, он будет создан.
-#         delattr(obj, name) — удалить атрибут.
-#----------------------------------------------------------------------------------------#
-#
+
         for row in self.Content:
-                
+            if len(List) == 0:
+                self.startRow = row + 1
+                break
+ 
             for column in self.Content[row]:
-                self.getReselt(row,column)
-                if self.Content[row][column] == None: temp = ''
+                if self.Content[row][column] == None:
+                    temp = ''
                 else: temp = str(self.Content[row][column])
                 for field in List:
                     if re.search(field[0],temp):
-                        if len(field[1]) == 2 : setattr(self, field[1][1], row)
+                        if len(field[1]) == 2 :
+                            setattr(self, field[1][1], row)
                         setattr(self, field[1][0], column)
-                        if field[1][0] == 'fact': setattr(self, 'startRow', row + 2)
-            if self.rowNumReport != 0 and self.rowDateReport != 0 and self.columName != 0: break
-        self.number = int(re.findall(r'\d+',re.findall(r'№\s?\d+\b', self.Content[self.rowNumReport][self.colNumReport])[0])[0])
-        self.date = dt.strptime(re.findall(r'\d+\.\d+\.\d+', self.Content[self.rowNumReport][self.colNumReport])[0], r'%d.%m.%Y')
-        listDate = re.findall(r'\d+\.\d+\.\d+', self.Content[self.rowDateReport][self.colDateReport])
-        self.date_start  = dt.strptime(listDate[0], r'%d.%m.%Y')
-        self.date_finish = dt.strptime(listDate[1], r'%d.%m.%Y')
-        if hasattr(self, 'dateSED'):
-            self.colCCEngeneer = self.dateSED + 1
-        else:
-            self.colCCEngeneer = self.note + 1
+                        List.remove(field)
+                        continue
 
     def getEndData(self):
         for row in range(self.startRow,len(self.Content)):
-            if self.Content[row][self.columnNumber] == 'Вне графика':
-                self.border = row
-                continue
             if self.Content[row][self.columnNumber] == None or self.Content[row][self.columnName] == None:
                 return row - 1
 
@@ -123,14 +105,6 @@ class Call_Customer(getContent):
                 id = self.db.insert('people',[['l_name','initials','company_id'],[[listString[2].title(),listString[3].title(),idContr]]])
         return id
 
-    def getEngineerCC(self, name):
-
-        if name == None: return None
-
-        name = name.split()[0]
-        id = self.db.select('people',{'where':['`l_name` = "' + name + '"'],'columns':['id']})
-        return id
-
     def getBuildingAxes(self, string):
         result = []
         if string == None:
@@ -154,10 +128,11 @@ class Call_Customer(getContent):
             result.append(lst.replace('и','/').replace(' ','').replace('\\','/').replace('//','/'))
         return result
 
-    def sortAxes(self, lst: list): # Сортировка осей, приведение к общему стандарту.
+    def sortAxes(self, lst: list):                  # Сортировка осей, приведение к общему стандарту.
+
         result = list()
         if not any(c.isdigit() for c in lst[0]):    # Опредиляем первую пару на наличие цифры в ней
-            lst[0], lst[1] = lst[1], lst[0]             # Перестановка в случае если нервая пара не содержит цифру
+            lst[0], lst[1] = lst[1], lst[0]         # Перестановка в случае если нервая пара не содержит цифру
         for step in lst:
             slst = step.split('-')
             if len(slst) > 1:
@@ -166,18 +141,33 @@ class Call_Customer(getContent):
                 result.append(slst[0]+'-'+slst[1])
             else:result.append(slst[0])
         return result
-
-    def getReselt(self, row, column):
-        test = {
-            'по графику:':'on_schedule',
-            'вне графика:':'off_schedule',
-            'не предъявлено:':'not_presented',
-            'не принято по различным причинам:':'not_accepted_for_various_reasons',
-            'принято в предыдущий период:':'accepted_in_the_previous_period',
-            'принято:':'accepted'
+    
+    def date(self):
+        montsDict = {
+            1:'янва', 2:'февр', 3:'мар', 4:'апрел', 5:'ма', 6:'июн', 7:'июл', 8:'авгу', 9:'сентяб', 10:'октяб', 11:'нояб', 12:'декаб'
         }
-        try:
-            key = test[self.Content[row][column]]
-            setattr(self, key, int(self.Content[row][column+1]))
-        except:
-            return
+        match = r'\s\d+\s[а-яА-Я]*\s*по\s\d+\s[а-яА-Я]*\s*\s202\d+'
+        listDate = re.findall(match, self.Content[self.rowDateReport][self.colDateReport])
+        if len(listDate) > 0:
+            numbers = re.findall(r'\d+',listDate[0])
+            months = re.findall(r'[а-яА-Я]{3,}',listDate[0])
+        else:
+            return False
+        st = months[0]
+        fin = months[0] if len(months) < 2 else months[1]
+        print(len(months), st, fin)
+        for mon in range(1,13):
+            if montsDict[mon] in st:
+                st = mon
+            if montsDict[mon] in fin:
+                fin = mon
+            if type(st) == int and type(fin) == int:
+                break
+        if len(numbers) == 3:
+            year = numbers[2]
+        else:
+            year = numbers[1]
+        self.dateStar = (('0' + numbers[0]) if len(numbers[0]) < 2 else numbers[0]) + '-' + (('0' + str(st)) if st < 10 else str(st)) + '-' + year
+        self.dateFinish = (('0' + numbers[1]) if len(numbers[1]) < 2 else numbers[1]) + '-' + (('0' + str(fin)) if st < 10 else str(fin)) + '-' + year
+        print(self.dateStar)
+        print(self.dateFinish)

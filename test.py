@@ -1,5 +1,4 @@
 import sys, os, json, time, re
-print(os.getcwd() + '\\importModul\\')
 sys.path.append(os.getcwd() + '\\importModul\\')
 from call_class import Call_Customer
 
@@ -10,20 +9,6 @@ if __name__ == '__main__':
     finalityDict = dict()
 
     match = r'^\d\d ЗАЯВКА на вызов заказчика.*\.xlsx$'
-    listick = ['columnNumber',          # Столбец с номера по порядку в отчёте
-        'columnName',                   # Столбец с названием работ и материалов
-        'call_Customer',                # Столбец с номером заявки вызова заказчика
-        'number_the_Customer',          # Столбец с номером по порядку из вызова Заказчика
-        'unitOfMeasurement',            # Столбец с единицами измерения
-        'countColumn',                  # Столбец с количеством
-        'workingDocumentationColumn',   # Столбец с шифром проекта или запись в ЖАН
-        'plane',                        # Столбец с планированной датой предъявления работ
-        'fact',                         # Столбец с фактической датой предъявления
-        'contractor_sRepresentative',   # Столбец субподрядчика
-        'executor',                     # Столбец исполнителя
-        'note',                         # Столбец с примечаниями
-        'dateSED',                      # Столбец с датой предоставления исполнительной документации
-        'colCCEngeneer']                # Столбец с именем инженера
 
     start = 23
     finish =24
@@ -46,14 +31,14 @@ if __name__ == '__main__':
         # result = ['Отчет №025 СК по вызову стройконтроля 2024-06-20-06-26.xlsx']
         for item in result:
 
-            gc = Call_Customer(link = item, globalLink = path, Sheet = '', nameDB = 'polytechstroy')
+            cc = Call_Customer(link = item, globalLink = path, Sheet = 'Лист1', nameDB = 'polytechstroy')
             exit(0)
-            for key in report.data:
-                try:
-                    report.data[key] = getattr(gc, key)
-                    report.delError(key)
-                except:
-                    report.data[key] = None
+            for key in range(cc.startRow, cc.end + 1):
+                pass
+                # try:
+                    
+                # except:
+                    
 
     # Запись в БД report, проверка существования записи по дате отчёта
             idReport = report.checkingTheRecord()
