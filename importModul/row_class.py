@@ -1,6 +1,6 @@
 import sys, re, json, os, datetime
-sys.path.append('C:/project/konservatory/data/')
-sys.path.append('C:/project/konservatory/importModul/')
+sys.path.append('C:\\project\\konservatory\\data\\')
+sys.path.append('C:\\project\\konservatory\\importModul\\')
 from DB_class import DB
 
 class Row (object):
@@ -409,7 +409,7 @@ class Row (object):
         except Exception as e:
             print('\n',e,'\n', self.data)
             self.errorСorrection()
-    
+
     def errorСorrection(self):
         # for key in self.data:
         #     print(f'{type(self.data[key]):30}',f'{key:12}',self.data[key])
