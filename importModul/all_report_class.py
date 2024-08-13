@@ -14,8 +14,16 @@ class All_Report(Excel):
     
     # Получить очищенные данные из файла 
     def getClearContent(self, startR = 1, endR = 0, startC = 1, endC = 0):
+
+        self.clearContent = {}
         content = self.getContent(startR, endR, startC, endC)
-        return content
+        for row in content:
+            self.clearContent[row] = {}
+            for column in content[row]:
+                try:
+                    self.clearContent[row][column] = self.removeAllUnnecessarySpaces(content[row][column])
+                except Exception as e:
+                    self.clearContent[row][column] = content[row][column]
 
     def update_xlsx(self, src, dest):
         # Откройте xlsx-файл для чтения

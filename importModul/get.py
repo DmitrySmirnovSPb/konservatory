@@ -184,7 +184,7 @@ class getContent(object):
         return self.getSelect(table, temp)
 
     # Добавить пробел между цифрой и буквой если этого пробела нет
-    def addSpaceNumber(string: str):
+    def addSpaceNumber(self, string: str):
         test = '0123456789'
         l = ',.'
         result = ''

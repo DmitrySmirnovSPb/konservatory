@@ -23,18 +23,18 @@ class Excel(object):
     def getSheeltByName(self, name: str):
         return self.wb[name]
 # Получить контент с активного листа со строки startR по строку endR, колонки от startC по колонку endC
-    def getContent(self, startR = 1, endR = 0, startC = 1, endC = 0):
+    def getContent(self, startR = 1, endR = 0, startC = 1, endC = 0, clear = False):
         rows = self.maxRow if endR == 0 or self.maxRow < endR else endR
         columns = self.maxColumn if endC == 0 or self.maxColumn < endC else endC
         result = {}
         for i in range(startR, rows + 1):
-            result[i] = self.getLineContent(i, startC, columns)
+            result[i] = self.getLineContent(i, startC, columns, clear)
         return result
 # Возвращает с листа Sheet строку с номером line со столбца с № start по № colums в формате словаря с ключами по № столбца
-    def getLineContent(self, line, start, columns):
+    def getLineContent(self, line, start, columns, clear):
         lineDict = {}
         for i in range(start, columns + 1):
-            lineDict[i] = self.getCell(line, i)
+            lineDict[i] = self.removeAllUnnecessarySpaces(self.getCell(line, i)) if clear else self.getCell(line, i)
         return lineDict
 # Возвращает с листа Sheet колонку с номером line со строки с № start по № end в формате словаря с ключами по № столбца
     def getColumContent(self, column: int, start, end):
@@ -56,6 +56,15 @@ class Excel(object):
             print(e)
             result = '000000'
         finally: return result
+
 # Возврщает числовой формат ячейки с координатами r и c
     def getCellFormatNumber(self, r: int, c: int):
         return self.Sheet.cell(row=r, column=c).number_format
+
+# Удалить лишние пробелы в string:str в начале, в конце и в середине
+    def removeAllUnnecessarySpaces(self, string):
+        if type(string) != str:
+            return string
+        while '  ' in string:
+            string = string.replace('  ',' ')
+        return string.strip()

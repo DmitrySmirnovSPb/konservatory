@@ -59,9 +59,15 @@ class DB(object):
 
     def selectAll(self, nameTable:str, query: dict):
         keys = query.keys()
+        columnsList = []
         if 'columns' in keys and query['columns'] != '*' :
-            columns = query['columns']
-        else: columns = ['*']
+            columns = columnsList = query['columns']
+        else:
+            columns = ['*']
+            temp = self.selectAll('information_schema.columns',{'columns':['COLUMN_NAME'],'where':['`table_name` = "' + nameTable + '"']})
+            for column in temp:
+                columnsList.append(column[0])
+
         strQuery = 'SELECT '
         if query['columns'][0] == '*': strQuery += '* '
         else:
@@ -69,7 +75,10 @@ class DB(object):
                 strQuery += '`' + query['columns'][i] + '`,'
             temp = strQuery[:-1]
             strQuery = temp + ' '
-        strQuery += 'FROM `' + nameTable + '` '
+        if nameTable == 'information_schema.columns':
+            strQuery += 'FROM ' + nameTable + ' '
+        else:
+            strQuery += 'FROM `' + nameTable + '` '
         if 'join' in keys:
             strQuery += self.joinSelect(nameTable, query['join']) + ' '
         if 'where' in keys:
@@ -86,9 +95,17 @@ class DB(object):
         # print(strQuery)
         with self.mydb.cursor() as cursor:
             cursor.execute(strQuery)
-            result = cursor.fetchall()
+            temp = cursor.fetchall()
         cursor.close()
-        if result == []: return (None,)
+        if temp == []: return {'return':None}
+        if nameTable == 'information_schema.columns':
+            return temp
+        result = []
+        for i in range(len(temp)):
+            dictTemp = {}
+            for j in range(len(temp[i])):
+                dictTemp[columnsList[j]] = temp[i][j]
+            result.append(dictTemp)
         return result
 
     # Сделать выборку в таблице nameTable 1 строка
@@ -96,7 +113,7 @@ class DB(object):
         result = self.selectAll(nameTable, query)
         if result == False: return False
         if result[0] == None: return None
-        return result[0][0]
+        return result[0][query['columns'][0]]
 
     # Обновить строку в таблице nameTable
     def update(self, nameTable: str, data: dict):
@@ -130,8 +147,14 @@ class DB(object):
 
     # Очистка таблицы от записей и установка id = 1
     def clearTable(self, nameTable:str):
-        query = 'TRUNCATE `' + nameTable + '`'
-        self.anyRequest(query)
+        try:
+            query =  'DELETE FROM `' + nameTable + '` WHERE `id` >= 1;'
+            self.anyRequest(query)
+            query =  'ALTER TABLE `' + nameTable + '` AUTO_INCREMENT = 1;'
+            self.anyRequest(query)
+        except Error as e:
+            print('Не удалось очистить таблицу', nameTable)
+            print('ERROR:\n', e)
 
     # продумать автоматического составления WHERE
     def where(self, where: list): 
