@@ -200,10 +200,12 @@ class DB(object):
             result.append(column)
         return result
 
-    def removeSpaces(self, text: str):
-        if '  ' not in text:
-            return text.strip()
-        self.removeSpaces(text.replace('  ',' '))
+    def removeSpaces(self, string: str):
+        if type(string) != str:
+            return string
+        while '  ' in string:
+            string = string.replace('  ',' ')
+        return string.strip()
 
     def __del__(self):
         self.mydb.close()
