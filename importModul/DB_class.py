@@ -191,6 +191,7 @@ class DB(object):
             result.append(table_name)
         return result
 
+    # Получить список полей в таблице table_name
     def getListColumns(self, table_name: str):
         result = list()
         cursor = self.mydb.cursor()
