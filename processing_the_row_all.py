@@ -16,7 +16,7 @@ if __name__ == '__main__':
     ccav = getContent(link = link, globalLink = globalLink, Sheet = Sheet)
 
     for row in ccav.Content:
-        if row < 5000: continue
+        if row < 5: continue
 
         srtdb = SRTDB(tableName)
 
@@ -72,7 +72,7 @@ if __name__ == '__main__':
 
         srtdb.dataInitiation(data)
 
-        exit(0)
+        # exit(0)
 
     # Время выполнения скрипта
     print("--- %s секунд ---" %(time.time() - start_time))
