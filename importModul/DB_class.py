@@ -112,7 +112,7 @@ class DB(object):
     def select(self, nameTable:str, query: dict):
         result = self.selectAll(nameTable, query)
         if result == False: return False
-        if result[0] == None: return None
+        if 'return' in result and result['return'] == None: return None
         return result[0][query['columns'][0]]
 
     # Обновить строку в таблице nameTable

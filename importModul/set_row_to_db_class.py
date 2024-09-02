@@ -4,6 +4,7 @@ from DB_class import DB
 class SRTDB(object):
 
     data = {}
+    axesMat =  r'[\s,(]\d{,2}\s?-?\s?\d{1,2}\s?[\\/и]{1,3}\s?[А-ЯA-Z]{0,1}[_\/]?Н?\s?-?\s?[А-ЯA-Z]{1,3}[_\/]?Н?|[ ,(]\d{,2}\s?-?\s?\d{1,2}\s?[\\/и]{1,3}\s?[А-ЯA-Z]{0,1}[_\/]?Н?\s?-?\s?[А-ЯA-Z]{1}[_\/]?Н?$|[ ,(][А-ЯA-Z]{1}[_\/]?Н?\s?-?\s?[А-ЯA-Z]{0,1}[_\/]?Н?\s?[\\/и]{1,3}\s?\d{,2}\s?-?\s?\d{1,2}|[ ,(][А-ЯA-Z]{1}[_\/]?Н?\s?-?\s?[А-ЯA-Z]{0,1}[_\/]?Н?\s?[\\/и]{1,3}\s?\d{,2}\s?-?\s?\d{1,2}$'
 
     def __init__(self, nameTable: str):
         self.nameTable = nameTable
@@ -26,11 +27,234 @@ class SRTDB(object):
 
         if 'result' in self.data:
             self.getResult()
-
+        if 'dimension' in self.data:
+            self.getDimension()
+        self.processTheNameColumn()
         self.getAMan()
+        self.getCode()
+        self.printField()
 
+    # Обработка колонки название работ и материалов
+    def processTheNameColumn(self):
+        self.temp = self.data['name_id']
+        self.data['axes'] = json.dumps(self.getAxes())
+        self.data['room'] = self.getRoom()
+        self.data['floor'] = self.getFloor()
+        self.data['name_id'] = self.getNameID()
+        print('-------------------------------',self.temp)
+        del self.temp
+    
     def checkAndWriteToTheDB(self):
         pass
+    
+    def getAxes(self):
+        result = []
+        temp = self.clearList(re.findall(self.axesMat, self.temp))
+        if len(temp) > 0:
+            for f in temp:
+                result.append(re.sub(r'[,(]','', str(f)))
+        if len(result) > 0:
+            temp = []
+            for i in result:
+                temp.append(self.sortAxes(i.split('/')))
+        dlt = [self.axesMat, 'в/о', 'в осях', r',{2,}', r'\s[.;]', 'между осями']
+        for mat in dlt:
+            self.temp = re.sub(mat,'', self.temp)
+        self.temp = self.removeDubleSpaces(self.temp)
+        
+        return temp
+
+    def sortAxes(self, lst:list):
+        result = []
+        if len(lst) == 0:
+            return lst
+        if not any(c.isdigit() for c in lst[0]):        # Опредиляем первую пару на наличие цифры в ней
+            lst[0], lst[1] = lst[1], lst[0]             # Перестановка в случае если нервая пара не содержит цифру
+        for step in lst:
+            slst = self.removeSpaces(step).split('-')
+            if len(slst) > 1:
+                for i in range(len(slst)):
+                    slst[i] = int(slst[i]) if slst[i].isdecimal() else slst[i]
+                if slst[0] > slst[1]:
+                    slst[0], slst[1] = slst[1], slst[0]
+                result.append(slst)
+            else:result.append(slst)
+        return result
+
+    def clearList(self, lsts: list):
+        result = list()
+        for lst in lsts:
+            result.append(lst.replace('и','/').replace('\\','/').replace('//','/'))
+        return result
+
+    def getCode(self):
+        db = DB()
+        result = {'code':None,'journal':None}
+        end = self.data['code']
+        t = r'\b001[-/_]12-[КK]-[А-ЯA-Z]+[\. ]*[А-ЯA-Z]*\d*\.*[А-ЯA-Z]*\d*[-\.]?[А-ЯA-Z0-9]*[-\.,]?[А-ЯA-Z0-9]*[-\.,]?[А-ЯA-Z0-9]*\b'
+        t1 = r'\b№?\s?\d*\s*в?\s?\bЖАН\s*№?\s*\d*\b'
+        # print(end)
+        if end != None:
+            pr = re.findall(t, end)
+            pr1 = re.findall(t1, end)
+
+            listReplace = {
+                ' ':'','-АР.1.2':'-АР1.2','КЖО':'КЖ0'
+            }
+            if pr != []:
+                result['code'] = pr[0]
+                end = end.replace(pr[0], '')
+                for retl in listReplace:
+                    result['code'] = result['code'].replace(retl, listReplace[retl])
+            if pr1 != [] and len(pr1) == 1:
+                result['journal'] = pr1[0]
+                end = end.replace(result['journal'], '')
+            elif len(pr1) > 1:
+                result['journal'] = []
+                for x in pr1:
+                    end = end.replace(x, '')
+                    result['journal'].append(x)
+            if len(end) > 0 and end[0] == ',':
+                end = end[1:]
+            
+            end = end.strip()
+
+            result['end'] = end
+        else:
+            result['end'] = ''
+        self.getIDCode(result)
+
+    def getIDCode(self, data):
+        temp = {}
+
+        date = re.findall(r'\b\d\d\.\d\d\.\s?\d{4}г?\.?\b', data['end']) # Проверка на наличие даты в шифре прокта
+
+        temp['date'] = []
+        if date != []:
+            listOut = [' ', 'г.', 'г']
+            for d in date:
+                data['end'] = data['end'].replace(d, '').replace('от','').strip()
+                for out in listOut:
+                    d = d.replace(out, '')
+                if d[-1] == '.':
+                    d = d[:-1]
+                temp['date'].append(str(datetime.datetime.strptime(d, '%d.%m.%Y')))
+        else:
+            temp['date'] = None
+        sheet = []
+
+        pattern = re.compile(r'л\.\s?\b\d+[.,]?\d*(\s?[-,]?\s?\d+[.,]?\d*)*', re.I)
+        tmp = []
+        for match in pattern.finditer(data['end']):
+            tmp += match.group().replace('л.','').split(',')
+        data['end'] = pattern.sub('', data['end'])
+
+        if len(tmp) > 0:
+            for string in tmp:
+                sheet.append(string)
+
+        if sheet != []:
+            temp['sheet'] = sheet
+        else:
+            temp['sheet'] = None
+
+        Keys = ['code','date']
+
+        tmp = []
+        if data['code'] != None:
+            codeTemp = data['code'].replace('001_12','001/12').replace('001-12','001/12')
+            tmp.append(codeTemp)
+        if type(data['journal']) == list:
+            for d in data['journal']:
+                tmp.append(d)
+        elif data['journal'] != None:
+            tmp.append(data['journal'])
+
+        COP = [x for x in tmp if x != ''] # список шифров проекта или ЖАН
+
+        tempID = []
+
+        db = DB()
+
+        for x in COP:
+            where = '`code` = "'+ x +'"'
+            id = db.select('code',{'where':[where],'columns':['id']})
+
+            if id == None:
+                Values =[x]
+                Keys = ['code']
+
+                if type(temp['date']) == list:
+                    Values.append(temp['date'][0])
+                    Keys.append('date')
+                if type(temp['sheet']) == list:
+                    Values.append(temp['sheet'][0])
+                    Keys.append('sheet')
+
+                id = db.insert('code',[Keys,[Values]])
+
+            tempID.append(id)
+
+        temp['id'] = tempID
+        if len(data['end']) > 0:
+            temp['note'] = data['end']
+        else:
+            temp['note'] = None
+        self.data['code'] = json.dumps(temp)
+
+    def getRoom(self):
+
+        mach = r'(\b\d\.\d\.\d{2}\w?)+'
+        lst = re.findall(mach, self.temp)
+        dltList =[mach,r'пом\.\s?,*']
+        for dlt in dltList:
+            self.temp = re.sub(dlt, '', self.temp)
+        
+        return json.dumps(lst)
+
+    def getFloor(self):
+
+        text = self.temp
+
+        tempFloor = {}
+        listMat = [r'([+-]\d+[.,]\d{1,3})', r'\d?\s?эт\.?']
+
+        altitude_mark = re.findall(listMat[0], text)
+        if len(altitude_mark) > 0:
+            tempFloor['altitude_mark'] = altitude_mark
+        if 'подвал' in text:
+            tempFloor={'floor': [-1]}
+        else:
+            temp = re.findall(listMat[1], text)
+            if type(temp) == list and len(temp) > 0:
+                tempFloor['floor'] = []
+
+                for fl in temp:
+                    tempF = re.findall(r'\d', fl)
+                    if len(tempFloor) > 0 :
+                        tempFloor['floor'].append(int(tempF[0]))
+                    else:
+                        continue
+            temp = json.loads(self.data['room'])
+            if len(tempFloor) == 0 and len(temp) > 0:
+                tempFloor['floor'] = int(temp[0].split('.')[0])
+
+        return json.dumps(tempFloor)
+
+    def getNameID(self):
+        pass
+
+    def getDimension(self):
+        if type(self.data['dimension']) != str:
+            return None
+        db = DB()
+        temp = self.data['dimension'].strip()
+        id = db.select('dimension',{'columns':['id'], 'where':['`name` = "' + temp + '"']})
+        if id == None or id == False:
+            match = re.search(r'\d?', temp)
+            multiplicity = match[0] if  match else 1
+            id = db.insert('dimension',[['name','multiplicity'],[[temp, multiplicity]]])
+        self.data['dimension'] = id
 
     # Запись в data результата приёмки и правка примечаний
     def getResult(self):
@@ -68,7 +292,6 @@ class SRTDB(object):
                     self.data[k] = db.select('people', {'columns':['id'], 'where': [' LOWER(`l_name`) = "' + temp[2] + '"']})
                     key = k + '_company'
                     self.data[key] = db.select('contractor', {'columns':['id'], 'where': [' LOWER(`name`) = "' + temp[1].replace(gap, ' ') + '"']})
-        del db
 
     # Получить список полей
     def getFields(self):
@@ -78,3 +301,18 @@ class SRTDB(object):
             lst.append(name[0])
         del db
         return lst
+
+    # распечатать содержимое self.data
+    def printField(self):
+        for field in self.data:
+            print(field, '=', self.data[field])
+
+    # Удалить все пробельные символы
+    def removeSpaces(self, string:str):
+        return re.sub(r'\s', '', string)
+
+    # Удалить все двойные и более пробельные символы
+    def removeDubleSpaces(self, string:str):
+        while '  ' in string:
+            string = string.replace('  ', ' ')
+        return string
