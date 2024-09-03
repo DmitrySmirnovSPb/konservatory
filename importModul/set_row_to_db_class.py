@@ -41,7 +41,6 @@ class SRTDB(object):
         self.data['room'] = self.getRoom()
         self.data['floor'] = self.getFloor()
         self.data['name_id'] = self.getNameID()
-        print('-------------------------------',self.temp)
         del self.temp
     
     def checkAndWriteToTheDB(self):
@@ -213,11 +212,10 @@ class SRTDB(object):
         return json.dumps(lst)
 
     def getFloor(self):
-
         text = self.temp
 
         tempFloor = {}
-        listMat = [r'([+-]\d+[.,]\d{1,3})', r'\d?\s?эт\.?']
+        listMat = [r'([+-]\d+[.,]\d{1,3})', r'\d?\s?эт\.?', r'на отм\.', r'отм\.', r'\s?[,.]', r'\bнад\s\d\sэт[\.ажом]{1,4}', r'\b\d эт[.аж]{,2}', r'\sнад\sподвалом', r'(\s[сотпд]{,2}\s*([+-]\d+[.,]\d{1,3}))?']
 
         altitude_mark = re.findall(listMat[0], text)
         if len(altitude_mark) > 0:
@@ -238,11 +236,14 @@ class SRTDB(object):
             temp = json.loads(self.data['room'])
             if len(tempFloor) == 0 and len(temp) > 0:
                 tempFloor['floor'] = int(temp[0].split('.')[0])
-
+        print(self.temp)
+        for dlt in listMat:
+            self.temp = re.sub(dlt, '', self.temp)
+        self.temp = self.removeDubleSpaces(self.temp)
         return json.dumps(tempFloor)
 
     def getNameID(self):
-        pass
+        print(self.temp)
 
     def getDimension(self):
         if type(self.data['dimension']) != str:
@@ -315,4 +316,4 @@ class SRTDB(object):
     def removeDubleSpaces(self, string:str):
         while '  ' in string:
             string = string.replace('  ', ' ')
-        return string
+        return string.strip()
