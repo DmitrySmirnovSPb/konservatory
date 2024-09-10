@@ -17,7 +17,7 @@ if __name__ == '__main__':
 
     for row in ccav.Content:
         if row < 5: continue
-        if row > 35: break
+        # if row > 35: break
 
         srtdb = SRTDB(tableName)
 

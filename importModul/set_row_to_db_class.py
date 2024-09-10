@@ -25,6 +25,8 @@ class SRTDB(object):
     def dataInitiation(self, dictFields):
         self.setFields(dictFields)
 
+        if 'actual_date' in self.data and type(self.data['actual_date']) == str:
+            self.data['actual_date'] = None
         if 'result' in self.data:
             self.getResult()
         if 'dimension' in self.data:
@@ -215,7 +217,7 @@ class SRTDB(object):
         text = self.temp
 
         tempFloor = {}
-        listMat = [r'([+-]\d+[.,]\d{1,3})', r'\d?\s?эт\.?', r'на отм\.', r'отм\.', r'\s?[,.]', r'\bнад\s\d\sэт[\.ажом]{1,4}', r'\b\d эт[.аж]{,2}', r'\sнад\sподвалом', r'(\s[сотпд]{,2}\s*([+-]\d+[.,]\d{1,3}))?']
+        listMat = [r'([+-]\d+[.,]\d{1,3})', r'[на]{,2}\s(\d?,?\s*)+?эт\.?[аже]{,3}', r'на отм\.', r'отм\.', r'\s+[,.]', r'\bнад\s\d\sэт[.ажом]{1,4}', r'\sнад\sподвалом', r'(\s[сотпд]{,2}\s*([+-]\d+[.,]\d{1,3}))?', r'\bподвал\b', r'\bс\s+до\b', '\bнадом\b']
 
         altitude_mark = re.findall(listMat[0], text)
         if len(altitude_mark) > 0:
@@ -229,7 +231,7 @@ class SRTDB(object):
 
                 for fl in temp:
                     tempF = re.findall(r'\d', fl)
-                    if len(tempFloor) > 0 :
+                    if len(tempF) > 0 :
                         tempFloor['floor'].append(int(tempF[0]))
                     else:
                         continue
@@ -249,13 +251,28 @@ class SRTDB(object):
         if type(self.data['dimension']) != str:
             return None
         db = DB()
-        temp = self.data['dimension'].strip()
-        id = db.select('dimension',{'columns':['id'], 'where':['`name` = "' + temp + '"']})
+        temp = self.data['dimension'].replace('\n','/').strip()
+        listDimension = temp.split('/')
+        id = db.select('dimension',{'columns':['id'], 'where':['`name` = "' + listDimension[0] + '"']})
         if id == None or id == False:
             match = re.search(r'\d?', temp)
-            multiplicity = match[0] if  match else 1
-            id = db.insert('dimension',[['name','multiplicity'],[[temp, multiplicity]]])
+            multiplicity = match[0] if match != None and match != '' else 1
+            id = db.insert('dimension', [['name','multiplicity'],[[temp, multiplicity]]])
         self.data['dimension'] = id
+        if len(listDimension) > 1:
+            listValue = str(self.data['dimension']).split('/')
+            text = ''
+            if len(listValue) > 1:
+                text = str(listValue) + str(listDimension)
+                self.data['value'] = listValue[0]
+                if len(listValue) == len(listDimension):
+                    for i in range(1,len(listValue)):
+                        text += listValue[i] + listDimension[i] + '; '
+                    text = text[:-2]
+            if self.data['note'] == None or self.data['note'] == '':
+                self.data['note'] = text
+            else:
+                self.data['note'] = text + '\n' + str(self.data['note'])
 
     # Запись в data результата приёмки и правка примечаний
     def getResult(self):
