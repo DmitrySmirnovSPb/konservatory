@@ -14,12 +14,11 @@ if __name__ == '__main__':
     Sheet = 'отчёт'
     
     ccav = getContent(link = link, globalLink = globalLink, Sheet = Sheet)
+    db = DB()
 
     for row in ccav.Content:
         if row < 5: continue
         # if row > 35: break
-
-        srtdb = SRTDB(tableName)
 
         data = {}
         # В графике вызова Заказчика или нет
@@ -71,9 +70,11 @@ if __name__ == '__main__':
         # Примечание
         data['note'] = ccav.Content[row][15]
 
+        srtdb = SRTDB(tableName, db)
+
         srtdb.dataInitiation(data)
 
-        print()
+        # print()
 
         # exit(0)
 

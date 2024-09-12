@@ -6,7 +6,8 @@ class SRTDB(object):
     data = {}
     axesMat =  r'[\s,(]\d{,2}\s?-?\s?\d{1,2}\s?[\\/и]{1,3}\s?[А-ЯA-Z]{0,1}[_\/]?Н?\s?-?\s?[А-ЯA-Z]{1,3}[_\/]?Н?|[ ,(]\d{,2}\s?-?\s?\d{1,2}\s?[\\/и]{1,3}\s?[А-ЯA-Z]{0,1}[_\/]?Н?\s?-?\s?[А-ЯA-Z]{1}[_\/]?Н?$|[ ,(][А-ЯA-Z]{1}[_\/]?Н?\s?-?\s?[А-ЯA-Z]{0,1}[_\/]?Н?\s?[\\/и]{1,3}\s?\d{,2}\s?-?\s?\d{1,2}|[ ,(][А-ЯA-Z]{1}[_\/]?Н?\s?-?\s?[А-ЯA-Z]{0,1}[_\/]?Н?\s?[\\/и]{1,3}\s?\d{,2}\s?-?\s?\d{1,2}$'
 
-    def __init__(self, nameTable: str):
+    def __init__(self, nameTable : str, db: DB):
+        self.db = db
         self.nameTable = nameTable
         self.listfields = self.getFields()
         self.checkAndWriteToTheDB()
@@ -34,7 +35,7 @@ class SRTDB(object):
         self.processTheNameColumn()
         self.getAMan()
         self.getCode()
-        self.printField()
+        # self.printField()
 
     # Обработка колонки название работ и материалов
     def processTheNameColumn(self):
@@ -76,7 +77,13 @@ class SRTDB(object):
             if len(slst) > 1:
                 for i in range(len(slst)):
                     slst[i] = int(slst[i]) if slst[i].isdecimal() else slst[i]
-                if slst[0] > slst[1]:
+                try:
+                    boolean = slst[0] > slst[1]
+                except Exception as e:
+                    print('\n\t\t\tERROR!\n',e,'\n\n')
+                    self.printField()
+                    exit(1)
+                if boolean:
                     slst[0], slst[1] = slst[1], slst[0]
                 result.append(slst)
             else:result.append(slst)
@@ -89,18 +96,17 @@ class SRTDB(object):
         return result
 
     def getCode(self):
-        db = DB()
         result = {'code':None,'journal':None}
         end = self.data['code']
         t = r'\b001[-/_]12-[КK]-[А-ЯA-Z]+[\. ]*[А-ЯA-Z]*\d*\.*[А-ЯA-Z]*\d*[-\.]?[А-ЯA-Z0-9]*[-\.,]?[А-ЯA-Z0-9]*[-\.,]?[А-ЯA-Z0-9]*\b'
-        t1 = r'\b№?\s?\d*\s*в?\s?\bЖАН\s*№?\s*\d*\b'
+        t1 = r'№\s?\d+\s*ЖАН\b|\bЖАН\s*№?\s*\d*\b'
         # print(end)
         if end != None:
             pr = re.findall(t, end)
             pr1 = re.findall(t1, end)
 
             listReplace = {
-                ' ':'','-АР.1.2':'-АР1.2','КЖО':'КЖ0'
+                ' ':'','-АР.1.2':'-АР1.2','КЖО':'КЖ0','A':'А','P':'Р','M':'М','H':'Н','X':'Х','E':'Е','T':'Т','K':'К','C':'С','B':'В', '№':''
             }
             if pr != []:
                 result['code'] = pr[0]
@@ -108,13 +114,17 @@ class SRTDB(object):
                 for retl in listReplace:
                     result['code'] = result['code'].replace(retl, listReplace[retl])
             if pr1 != [] and len(pr1) == 1:
-                result['journal'] = pr1[0]
-                end = end.replace(result['journal'], '')
+                result['journal'] = pr1[0].replace('№', '').replace(' ', '')
+                try:
+                    end = end.replace(result['journal'], '')
+                except Exception as e:
+                    print(result['journal'])
+                    self.printField()
             elif len(pr1) > 1:
                 result['journal'] = []
                 for x in pr1:
                     end = end.replace(x, '')
-                    result['journal'].append(x)
+                    result['journal'].append(x.replace('№', '').replace(' ', ''))
             if len(end) > 0 and end[0] == ',':
                 end = end[1:]
             
@@ -175,11 +185,12 @@ class SRTDB(object):
 
         tempID = []
 
-        db = DB()
-
         for x in COP:
             where = '`code` = "'+ x +'"'
-            id = db.select('code',{'where':[where],'columns':['id']})
+            try:
+                id = self.db.select('code',{'where':[where],'columns':['id']})
+            except Exception as e:
+                print('\t\tERROR!!!', e)
 
             if id == None:
                 Values =[x]
@@ -192,7 +203,10 @@ class SRTDB(object):
                     Values.append(temp['sheet'][0])
                     Keys.append('sheet')
 
-                id = db.insert('code',[Keys,[Values]])
+                try:
+                    id = self.db.insert('code',[Keys,[Values]])
+                except Exception as e:
+                    print('\t\tERROR!!!', e)
 
             tempID.append(id)
 
@@ -238,26 +252,34 @@ class SRTDB(object):
             temp = json.loads(self.data['room'])
             if len(tempFloor) == 0 and len(temp) > 0:
                 tempFloor['floor'] = int(temp[0].split('.')[0])
-        print(self.temp)
+        # print(self.temp)
         for dlt in listMat:
             self.temp = re.sub(dlt, '', self.temp)
         self.temp = self.removeDubleSpaces(self.temp)
         return json.dumps(tempFloor)
 
     def getNameID(self):
-        print(self.temp)
+        pass
+        # print(self.temp)
 
     def getDimension(self):
         if type(self.data['dimension']) != str:
             return None
-        db = DB()
+
         temp = self.data['dimension'].replace('\n','/').strip()
         listDimension = temp.split('/')
-        id = db.select('dimension',{'columns':['id'], 'where':['`name` = "' + listDimension[0] + '"']})
+        try:
+            id = self.db.select('dimension',{'columns':['id'], 'where':['`name` = "' + listDimension[0] + '"']})
+        except Exception as e:
+            print('\t\tERROR!!!', e)
         if id == None or id == False:
             match = re.search(r'\d?', temp)
-            multiplicity = match[0] if match != None and match != '' else 1
-            id = db.insert('dimension', [['name','multiplicity'],[[temp, multiplicity]]])
+            print(match[0], temp)
+            multiplicity = match[0] if match and match[0] != '' else 1
+            try:
+                id = self.db.insert('dimension', [['name','multiplicity'],[[temp, multiplicity]]])
+            except Exception as e:
+                print('\t\tERROR!!!', e)
         self.data['dimension'] = id
         if len(listDimension) > 1:
             listValue = str(self.data['dimension']).split('/')
@@ -294,7 +316,6 @@ class SRTDB(object):
         replacement = {
             'ао«дока':'ао дока', '«':'', '»':'','\n':' ', 'cк дока':'ск'+gap+'дока', 'ск ':'','-центр':'', '-инжиниринг':'', 'художественно-реставрационная группа ':'','нв билдинг':'нв'+gap+'билдинг','ук арт-глас':'арт-глас','"':'','новое время':'новое'+gap+'время','политех строй':'политехстрой', 'лепной двор':'лепной'+gap+'двор','ван строй':'ван'+gap+'строй','метеор лифт':'метеор'+gap+'лифт', 'янтарная прядь-паркет': 'янтарная'+gap+'прядь-паркет', 'пгс систем':'пгс'+gap+'систем', 'гранит тех':'гранит'+gap+'тех'
         }
-        db = DB()
 
         for k in lst:
             if self.data[k] != None:
@@ -302,22 +323,33 @@ class SRTDB(object):
 
                 if k == 'id_CC_engineer':
                     temp = temp.split()[0]
-                    self.data[k] = db.select('people', {'columns':['id'], 'where': [' LOWER(`l_name`) = "' + temp + '"']})
+                    try:
+                        self.data[k] = self.db.select('people', {'columns':['id'], 'where': [' LOWER(`l_name`) = "' + temp + '"']})
+                    except Exception as e:
+                        print('\t\tERROR!!!', e)
                 else:
                     for key, value in replacement.items():
                         temp = temp.replace(key, value)
                     temp = temp.split()
-                    self.data[k] = db.select('people', {'columns':['id'], 'where': [' LOWER(`l_name`) = "' + temp[2] + '"']})
+                    try:
+                        self.data[k] = self.db.select('people', {'columns':['id'], 'where': [' LOWER(`l_name`) = "' + temp[2] + '"']})
+                    except Exception as e:
+                        print('\t\tERROR!!!', e)
                     key = k + '_company'
-                    self.data[key] = db.select('contractor', {'columns':['id'], 'where': [' LOWER(`name`) = "' + temp[1].replace(gap, ' ') + '"']})
+                    try:
+                        self.data[key] = self.db.select('contractor', {'columns':['id'], 'where': [' LOWER(`name`) = "' + temp[1].replace(gap, ' ') + '"']})
+                    except Exception as e:
+                        print('\t\tERROR!!!', e)
 
     # Получить список полей
     def getFields(self):
-        db = DB()
         lst = []
-        for name in db.getListColumns(self.nameTable):
+        try:
+            listFor = self.db.getListColumns(self.nameTable)
+        except Exception as e:
+            print('\t\tERROR!!!', e)
+        for name in listFor:
             lst.append(name[0])
-        del db
         return lst
 
     # распечатать содержимое self.data
