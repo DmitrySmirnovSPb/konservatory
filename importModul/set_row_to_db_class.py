@@ -114,7 +114,7 @@ class SRTDB(object):
                 for retl in listReplace:
                     result['code'] = result['code'].replace(retl, listReplace[retl])
             if pr1 != [] and len(pr1) == 1:
-                result['journal'] = pr1[0].replace('№', '').replace(' ', '')
+                result['journal'] = self.removeDubleSpaces(pr1[0].replace('№', ''))
                 try:
                     end = end.replace(result['journal'], '')
                 except Exception as e:
@@ -124,7 +124,7 @@ class SRTDB(object):
                 result['journal'] = []
                 for x in pr1:
                     end = end.replace(x, '')
-                    result['journal'].append(x.replace('№', '').replace(' ', ''))
+                    result['journal'].append(self.removeDubleSpaces(x.replace('№', '')))
             if len(end) > 0 and end[0] == ',':
                 end = end[1:]
             
@@ -364,5 +364,6 @@ class SRTDB(object):
     # Удалить все двойные и более пробельные символы
     def removeDubleSpaces(self, string:str):
         while '  ' in string:
-            string = string.replace('  ', ' ')
+            string = re.sub(r'\s{2,}', ' ', string)
+            # string = string.replace('  ', ' ')
         return string.strip()
