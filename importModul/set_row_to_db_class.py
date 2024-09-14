@@ -4,7 +4,19 @@ from DB_class import DB
 class SRTDB(object):
 
     data = {}
-    axesMat =  r'[\s,(]\d{,2}\s?-?\s?\d{1,2}\s?[\\/и]{1,3}\s?[А-ЯA-Z]{0,1}[_\/]?Н?\s?-?\s?[А-ЯA-Z]{1,3}[_\/]?Н?|[ ,(]\d{,2}\s?-?\s?\d{1,2}\s?[\\/и]{1,3}\s?[А-ЯA-Z]{0,1}[_\/]?Н?\s?-?\s?[А-ЯA-Z]{1}[_\/]?Н?$|[ ,(][А-ЯA-Z]{1}[_\/]?Н?\s?-?\s?[А-ЯA-Z]{0,1}[_\/]?Н?\s?[\\/и]{1,3}\s?\d{,2}\s?-?\s?\d{1,2}|[ ,(][А-ЯA-Z]{1}[_\/]?Н?\s?-?\s?[А-ЯA-Z]{0,1}[_\/]?Н?\s?[\\/и]{1,3}\s?\d{,2}\s?-?\s?\d{1,2}$'
+
+    axesMatList = [
+        r'[А-Яа-яABCEHKMOPTX]_?Н?\s?-\s?[А-Яа-яABCEHKMOPTX]_?Н?\s?[\\/и]\s?\d{1,2}\s?-\s?\d{1,2}',
+        r'[А-Яа-яABCEHKMOPTX]_?Н?\s?-\s?[А-Яа-яABCEHKMOPTX]_?Н?\s?[\\/и]\s?\d{1,2}',
+        r'[А-Яа-яABCEHKMOPTX]_?Н?\s?[\\/и]\s?\d{1,2}\s?-\s?\d{1,2}',
+        r'[А-Яа-яABCEHKMOPTX]_?Н?\s?[\\/и]\s?\d{1,2}',
+        r'\d{1,2}\s?-\s?\d{1,2}\s?[\\/и]\s?[А-Яа-яABCEHKMOPTX]_?Н?\s?-\s?[А-Яа-яABCEHKMOPTX]_?Н?',
+        r'\d{1,2}\s?[\\/и]\s?[А-Яа-яABCEHKMOPTX]_?Н?\s?-\s?[А-Яа-яABCEHKMOPTX]_?Н?',
+        r'\d{1,2}\s?-\s?\d{1,2}\s?[\\/и]\s?[А-Яа-яABCEHKMOPTX]_?Н?',
+        r'\d{1,2}\s?[\\/и]\s?[А-Яа-яABCEHKMOPTX]_?Н?'
+    ]
+    
+    axesMat =  r'[\s,(]\d{,2}\s?-?\s?\d{1,2}\s?[\\/и]\s?[А-Яа-яA-Z]+[_\/]?Н?\s?-?\s?[А-Яа-яA-Z]?[_\/]?Н?|[ ,(]\d{,2}\s?-?\s?\d{1,2}\s?[\\/и]\s?[А-Яа-яA-Z]?[_\/]?Н?\s?-?\s?[А-Яа-яA-Z][_\/]?Н?$|[ ,(][А-Яа-яA-Z]{1}[_\/]?Н?\s?-?\s?[А-Яа-яA-Z]{0,1}[_\/]?Н?\s?[\\/и]\s?\d{,2}\s?-?\s?\d{1,2}|[ ,(][А-Яа-яA-Z]{1}[_\/]?Н?\s?-?\s?[А-Яа-яA-Z]{0,1}[_\/]?Н?\s?[\\/и]\s?\d{,2}\s?-?\s?\d{1,2}$'
 
     def __init__(self, nameTable : str, db: DB):
         self.db = db
@@ -51,7 +63,18 @@ class SRTDB(object):
     
     def getAxes(self):
         result = []
-        temp = self.clearList(re.findall(self.axesMat, self.temp))
+        temp = re.sub(r'[МM][_/\][HН]','М_Н',str(self.temp)).replace('по оси','/')
+        tempLst = []
+        for mat in self.axesMatList:
+            tmp = self.clearList(re.findall(mat, temp))
+            if len(tmp) > 0:
+                for i in tmp:
+                    tempLst.append(i)
+        # tmp = tempLst
+        tmp = self.clearAxes(tempLst)
+        temp = self.clearList(re.findall(self.axesMat, temp))
+        if len(temp) == 0: print(self.temp)
+        print(temp, '->',tmp)
         if len(temp) > 0:
             for f in temp:
                 result.append(re.sub(r'[,(]','', str(f)))
@@ -63,8 +86,31 @@ class SRTDB(object):
         for mat in dlt:
             self.temp = re.sub(mat,'', self.temp)
         self.temp = self.removeDubleSpaces(self.temp)
-        
+        print(temp)
         return temp
+
+    def clearAxes(self, lst: list):
+        if type(lst) != list or len(lst) < 2:
+            return lst
+        result = []
+        for i in lst:
+            if len(result) == 0:
+                result.append(i)
+            else:
+                flag = False
+                for j in result:
+                    if i in j :
+                        flag = True
+                        break
+                    elif j in i:
+                        result.remove(j)
+                        result.append(i)
+                        flag = True
+                        break
+                if not flag:
+                    result.append(i)
+                    
+        return result
 
     def sortAxes(self, lst:list):
         result = []
@@ -364,6 +410,6 @@ class SRTDB(object):
     # Удалить все двойные и более пробельные символы
     def removeDubleSpaces(self, string:str):
         while '  ' in string:
-            string = re.sub(r'\s{2,}', ' ', string)
+            string = re.sub('  ', ' ', string)
             # string = string.replace('  ', ' ')
         return string.strip()
