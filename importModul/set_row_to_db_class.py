@@ -8,7 +8,7 @@ class SRTDB(object):
     counter = 0
 
     axesMatList = [
-        r'[А-Яа-яABCEHKMOPTX]_?Н?\s?-\s?[А-Яа-яABCEHKMOPTX]_?Н?\s?[/и\ ]\s?\d{1,2}\s?-\s?\d{1,2}',
+        r'[А-Яа-яABCEHKMOPTX]_?Н?\s?-\s?[А-Яа-яABCEHKMOPTX]_?Н?\s?[\\/и]\s?\d{1,2}\s?-\s?\d{1,2}',
         r'[А-Яа-яABCEHKMOPTX]_?Н?\s?-\s?[А-Яа-яABCEHKMOPTX]_?Н?\s?[\\/и]\s?\d{1,2}',
         r'[А-Яа-яABCEHKMOPTX]_?Н?\s?[\\/и]\s?\d{1,2}\s?-\s?\d{1,2}',
         r'[А-Яа-яABCEHKMOPTX]_?Н?\s?[\\/и]\s?\d{1,2}',
