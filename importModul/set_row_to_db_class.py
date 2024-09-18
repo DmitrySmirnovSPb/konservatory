@@ -5,8 +5,10 @@ class SRTDB(object):
 
     data = {}
 
+    counter = 0
+
     axesMatList = [
-        r'[А-Яа-яABCEHKMOPTX]_?Н?\s?-\s?[А-Яа-яABCEHKMOPTX]_?Н?\s?[\\/и]\s?\d{1,2}\s?-\s?\d{1,2}',
+        r'[А-Яа-яABCEHKMOPTX]_?Н?\s?-\s?[А-Яа-яABCEHKMOPTX]_?Н?\s?[/и\ ]\s?\d{1,2}\s?-\s?\d{1,2}',
         r'[А-Яа-яABCEHKMOPTX]_?Н?\s?-\s?[А-Яа-яABCEHKMOPTX]_?Н?\s?[\\/и]\s?\d{1,2}',
         r'[А-Яа-яABCEHKMOPTX]_?Н?\s?[\\/и]\s?\d{1,2}\s?-\s?\d{1,2}',
         r'[А-Яа-яABCEHKMOPTX]_?Н?\s?[\\/и]\s?\d{1,2}',
@@ -70,14 +72,15 @@ class SRTDB(object):
             if len(tmp) > 0:
                 for i in tmp:
                     tempLst.append(i)
-        # tmp = tempLst
-        tmp = self.clearAxes(tempLst)
-        temp = self.clearList(re.findall(self.axesMat, temp))
-        if len(temp) == 0: print(self.temp)
-        print(temp, '->',tmp)
-        if len(temp) > 0:
-            for f in temp:
-                result.append(re.sub(r'[,(]','', str(f)))
+        result = self.clearAxes(tempLst)
+        # temp = self.clearList(re.findall(self.axesMat, temp))
+        if len(result) == 0:
+            SRTDB.counter += 1
+            if self.counter > 1700 and self.counter <= 2200:
+                print(self.counter, self.temp)
+        # if len(temp) > 0:
+        #     for f in temp:
+        #         result.append(re.sub(r'[,(]','', str(f)))
         if len(result) > 0:
             temp = []
             for i in result:
@@ -86,7 +89,6 @@ class SRTDB(object):
         for mat in dlt:
             self.temp = re.sub(mat,'', self.temp)
         self.temp = self.removeDubleSpaces(self.temp)
-        print(temp)
         return temp
 
     def clearAxes(self, lst: list):
