@@ -17,7 +17,7 @@ if __name__ == '__main__':
     db = DB()
 
     for row in ccav.Content:
-        if row < 5: continue
+        if row < 12818: continue
         # if row > 35: break
 
         data = {}
@@ -69,6 +69,8 @@ if __name__ == '__main__':
         data['floor'] = ccav.Content[row][7]
         # Примечание
         data['note'] = ccav.Content[row][15]
+
+        print(row)
 
         srtdb = SRTDB(tableName, db)
 

@@ -92,9 +92,9 @@ class DB(object):
                 strQuery += ','
             temp = strQuery[:-1]
             strQuery = temp
-        # print(strQuery)
+        print(strQuery)
         with self.mydb.cursor() as cursor:
-            cursor.execute(strQuery)
+            cursor.execute(strQuery+';')
             temp = cursor.fetchall()
         cursor.close()
         if temp == []: return {'return':None}
@@ -110,6 +110,7 @@ class DB(object):
 
     # Сделать выборку в таблице nameTable 1 строка
     def select(self, nameTable:str, query: dict):
+        print('select',query)
         result = self.selectAll(nameTable, query)
         if result == False: return False
         if 'return' in result and result['return'] == None: return None

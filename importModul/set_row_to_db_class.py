@@ -8,14 +8,14 @@ class SRTDB(object):
     counter = 0
 
     axesMatList = [
-        r'[А-Яа-яABCEHKMOPTX]_?Н?\s?-\s?[А-Яа-яABCEHKMOPTX]_?Н?\s?[\\/и]\s?\d{1,2}\s?-\s?\d{1,2}',
-        r'[А-Яа-яABCEHKMOPTX]_?Н?\s?-\s?[А-Яа-яABCEHKMOPTX]_?Н?\s?[\\/и]\s?\d{1,2}',
-        r'[А-Яа-яABCEHKMOPTX]_?Н?\s?[\\/и]\s?\d{1,2}\s?-\s?\d{1,2}',
-        r'[А-Яа-яABCEHKMOPTX]_?Н?\s?[\\/и]\s?\d{1,2}',
-        r'\d{1,2}\s?-\s?\d{1,2}\s?[\\/и]\s?[А-Яа-яABCEHKMOPTX]_?Н?\s?-\s?[А-Яа-яABCEHKMOPTX]_?Н?',
-        r'\d{1,2}\s?[\\/и]\s?[А-Яа-яABCEHKMOPTX]_?Н?\s?-\s?[А-Яа-яABCEHKMOPTX]_?Н?',
-        r'\d{1,2}\s?-\s?\d{1,2}\s?[\\/и]\s?[А-Яа-яABCEHKMOPTX]_?Н?',
-        r'\d{1,2}\s?[\\/и]\s?[А-Яа-яABCEHKMOPTX]_?Н?'
+        r'[А-Яа-яABCEHKMOPTX]_?Н?\s?-\s?[А-Яа-яABCEHKMOPTX]_?Н?\s?[\\/_]\s?\d{1,2}\s?-\s?\d{1,2}',
+        r'[А-Яа-яABCEHKMOPTX]_?Н?\s?-\s?[А-Яа-яABCEHKMOPTX]_?Н?\s?[\\/]\s?\d{1,2}',
+        r'[А-Яа-яABCEHKMOPTX]_?Н?\s?[\\/_]\s?\d{1,2}\s?-\s?\d{1,2}',
+        r'[А-Яа-яABCEHKMOPTX]_?Н?\s?[\\/_]\s?\d{1,2}',
+        r'\d{1,2}\s?-\s?\d{1,2}\s?[\\/_]\s?[А-Яа-яABCEHKMOPTX]_?Н?\s?-\s?[А-Яа-яABCEHKMOPTX]_?Н?',
+        r'\d{1,2}\s?[\\/_]\s?[А-Яа-яABCEHKMOPTX]_?Н?\s?-\s?[А-Яа-яABCEHKMOPTX]_?Н?',
+        r'\d{1,2}\s?-\s?\d{1,2}\s?[\\/_]\s?[А-Яа-яABCEHKMOPTX]_?Н?',
+        r'\d{1,2}\s?[\\/_]\s?[А-Яа-яABCEHKMOPTX]_?Н?'
     ]
     
     axesMat =  r'[\s,(]\d{,2}\s?-?\s?\d{1,2}\s?[\\/и]\s?[А-Яа-яA-Z]+[_\/]?Н?\s?-?\s?[А-Яа-яA-Z]?[_\/]?Н?|[ ,(]\d{,2}\s?-?\s?\d{1,2}\s?[\\/и]\s?[А-Яа-яA-Z]?[_\/]?Н?\s?-?\s?[А-Яа-яA-Z][_\/]?Н?$|[ ,(][А-Яа-яA-Z]{1}[_\/]?Н?\s?-?\s?[А-Яа-яA-Z]{0,1}[_\/]?Н?\s?[\\/и]\s?\d{,2}\s?-?\s?\d{1,2}|[ ,(][А-Яа-яA-Z]{1}[_\/]?Н?\s?-?\s?[А-Яа-яA-Z]{0,1}[_\/]?Н?\s?[\\/и]\s?\d{,2}\s?-?\s?\d{1,2}$'
@@ -49,7 +49,8 @@ class SRTDB(object):
         self.processTheNameColumn()
         self.getAMan()
         self.getCode()
-        # self.printField()
+        self.checkAndWriteToTheDB()
+        exit(1)
 
     # Обработка колонки название работ и материалов
     def processTheNameColumn(self):
@@ -61,11 +62,29 @@ class SRTDB(object):
         del self.temp
     
     def checkAndWriteToTheDB(self):
-        pass
+        where = ''
+        for key, val in self.data.items():
+            if type(val) == datetime.datetime:
+                val = val.strftime('%Y-%m-%d')
+                where += f' `{key}` = {val} AND\n'
+            elif type(val) == int:
+                where += f' `{key}` = {val} AND\n'
+            elif type(val) == float:
+                where += f' `{key}` = {round(val, 2)} AND\n'
+            elif type(val) == bool:
+                if val : val = 'TRUE'
+                else: val = 'FALSE'
+                where += f' `{key}` = {val} AND\n'
+            else:
+                where += f' `{key}` = "{self.db.escapingQuotes(val)}" AND\n'
+        text = where[1:-5]
+        print("===============================>\n",text)
+        #id = self.db.select(self.nameTable,{'columns':['id'],'where':[text]})
+        # print(id)
     
     def getAxes(self):
         result = []
-        temp = re.sub(r'[МM][_/\][HН]','М_Н',str(self.temp)).replace('по оси','/')
+        temp = re.sub(r'[МM]+[/\]+[HН]+','М_Н',str(self.temp.replace('_','/'))).replace('по оси','/')
         tempLst = []
         for mat in self.axesMatList:
             tmp = self.clearList(re.findall(mat, temp))
@@ -73,16 +92,10 @@ class SRTDB(object):
                 for i in tmp:
                     tempLst.append(i)
         result = self.clearAxes(tempLst)
-        # temp = self.clearList(re.findall(self.axesMat, temp))
-        if len(result) == 0:
-            SRTDB.counter += 1
-            if self.counter > 1700 and self.counter <= 2200:
-                print(self.counter, self.temp)
-        # if len(temp) > 0:
-        #     for f in temp:
-        #         result.append(re.sub(r'[,(]','', str(f)))
+        temp = []
+        if len(result) == 0: pass
+            # result = self.inputAxes()
         if len(result) > 0:
-            temp = []
             for i in result:
                 temp.append(self.sortAxes(i.split('/')))
         dlt = [self.axesMat, 'в/о', 'в осях', r',{2,}', r'\s[.;]', 'между осями']
@@ -90,6 +103,21 @@ class SRTDB(object):
             self.temp = re.sub(mat,'', self.temp)
         self.temp = self.removeDubleSpaces(self.temp)
         return temp
+
+    def inputAxes(self):
+        print('\nВведите оси из ниже предоставленной записи в формате Ч-Ч/Б-Б, где Ч - это число от 1 до 37, Б - это буква от А до Я, включая М/Н\n\tЕсли осей несколько введите их последовательно разделяя знаком ";"')
+        print(self.temp)
+        inp = input('Введите значение: ')
+        if inp == '':
+            result = []
+        else:
+            inp = inp.upper()
+            result = []
+            f = self.removeSpaces(inp).split(';')
+            for i in f:
+                i = re.sub(r'[МM]+/[HН]+','М_Н',i.replace('\\','/'))
+                result.append(i)
+        return result
 
     def clearAxes(self, lst: list):
         if type(lst) != list or len(lst) < 2:
@@ -128,7 +156,7 @@ class SRTDB(object):
                 try:
                     boolean = slst[0] > slst[1]
                 except Exception as e:
-                    print('\n\t\t\tERROR!\n',e,'\n\n')
+                    print('\n\t\t\tERROR!\ndef sortAxes\n',e,f'\n{slst}\n')
                     self.printField()
                     exit(1)
                 if boolean:
@@ -267,13 +295,15 @@ class SRTDB(object):
 
     def getRoom(self):
 
-        mach = r'(\b\d\.\d\.\d{2}\w?)+'
+        mach = r'(\b\d{1}[.,]{1}\d{1}[.,]{1}\d{2}\w?)+'
         lst = re.findall(mach, self.temp)
         dltList =[mach,r'пом\.\s?,*']
         for dlt in dltList:
             self.temp = re.sub(dlt, '', self.temp)
-        
-        return json.dumps(lst)
+        result = []
+        for st in lst:
+            result.append(str(st).replace(',','.'))
+        return json.dumps(result)
 
     def getFloor(self):
         text = self.temp
@@ -307,8 +337,15 @@ class SRTDB(object):
         return json.dumps(tempFloor)
 
     def getNameID(self):
-        pass
-        # print(self.temp)
+        delDict = {r'\s+:': '', r'\.{2,}':'.'}
+        text = self.temp
+        for key, val in delDict.items():
+            text = re.sub(key, val, text)
+        text = self.removeDubleSpaces(text)
+        id = self.db.select('name_of_works_and_materials', {'columns':['id'],'where':[f'`name` = "{text}"']})
+        if id == None:
+            id = self.db.insert('name_of_works_and_materials',[['name'],[[text]]])
+        return id
 
     def getDimension(self):
         if type(self.data['dimension']) != str:
