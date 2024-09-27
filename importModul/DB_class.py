@@ -11,9 +11,9 @@ class DB(object):
             self.mydb = connect(**self.getConfig())
         except Error as e:
             if e.errno == errorcode.ER_ACCESS_DENIED_ERROR:
-                print("Something is wrong with your user name or password")
+                print("Что-то не так с вашим именем пользователя или паролем в базе данных.")
             elif e.errno == errorcode.ER_BAD_DB_ERROR:
-                print("Database does not exist")
+                print("База данных не существует")
             else:
                 print(e)
 
@@ -49,7 +49,7 @@ class DB(object):
 
         temp = add_employee[:-1]                    # Конец составления строки команды INSERT
         data = (*data,)                             # Преобразование списка в кортеж
-        print(temp, data)
+        # print(temp, data)
         cursor = self.mydb.cursor()
         cursor.execute(temp, data)
         emp_no = cursor.lastrowid
@@ -58,9 +58,12 @@ class DB(object):
         return emp_no
 
     def selectAll(self, nameTable:str, query: dict):
+
         keys = query.keys()
         columnsList = []
-        if 'columns' in keys and query['columns'] != '*' :
+        temp = []
+
+        if 'columns' in keys and query['columns'] != ['*'] :
             columns = columnsList = query['columns']
         else:
             columns = ['*']
@@ -92,29 +95,44 @@ class DB(object):
                 strQuery += ','
             temp = strQuery[:-1]
             strQuery = temp
-        print(strQuery)
-        with self.mydb.cursor() as cursor:
+        with self.mydb.cursor(dictionary=True) as cursor:
             cursor.execute(strQuery+';')
             temp = cursor.fetchall()
         cursor.close()
-        if temp == []: return {'return':None}
+
         if nameTable == 'information_schema.columns':
-            return temp
-        result = []
-        for i in range(len(temp)):
-            dictTemp = {}
-            for j in range(len(temp[i])):
-                dictTemp[columnsList[j]] = temp[i][j]
-            result.append(dictTemp)
-        return result
+            result = []
+            for field in temp:
+                result.append(field['COLUMN_NAME'])
+            return(result)
+        return temp
 
     # Сделать выборку в таблице nameTable 1 строка
     def select(self, nameTable:str, query: dict):
-        print('select',query)
         result = self.selectAll(nameTable, query)
         if result == False: return False
         if 'return' in result and result['return'] == None: return None
-        return result[0][query['columns'][0]]
+        if query['columns'][0] == '*':
+            return result[0]
+        else:
+            return result[query['columns'][0]]
+     # 
+    def selectCell(self, nameTable:str, query: dict):
+        result = self.selectAll(nameTable, query)
+        if query['columns'][0] == '*':
+            columnName = 'id'
+        else:
+            columnName = query['columns'][0]
+        if result == None or result == []:
+            return None
+        elif result == False:
+            return False
+        else:
+            # if 'test' in query.keys():
+            #     print(query)
+            #     print(f'result[0]=>{columnName}\n',result,'\n\n')
+            #     # exit('exit DB -> selectCell')
+            return result[0][columnName]
 
     # Обновить строку в таблице nameTable
     def update(self, nameTable: str, data: dict):
@@ -157,9 +175,23 @@ class DB(object):
             print('Не удалось очистить таблицу', nameTable)
             print('ERROR:\n', e)
 
-    # продумать автоматического составления WHERE
-    def where(self, where: list): 
-        return where[0]
+    # WHERE список условий при пустом списке возвращает пустую строку, при 1 записи возвращает строку спервой записью
+    # если несколько условий, то список состоит из списков, где 0 элемент - это AND, OR, а 1 элемент само условие
+    def where(self, where: list):
+        if len(where) == 1:
+            return where[0]
+        elif len(where) > 1:
+            result = ''
+            flag = True
+            for step in where:
+                if flag:
+                    result += step[1]
+                    flag = False
+                else:
+                    result += ' ' + step[0] + ' ' + step[1]
+            return result
+        else:
+            return ''
 
     # Возвращает строку с экранированными слэшем кавычами и обратным слэшем
     # А также с удаленными лишними пробелами

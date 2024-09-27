@@ -17,7 +17,7 @@ if __name__ == '__main__':
     db = DB()
 
     for row in ccav.Content:
-        if row < 12818: continue
+        if row < 5: continue
         # if row > 35: break
 
         data = {}

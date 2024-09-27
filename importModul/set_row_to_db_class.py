@@ -24,7 +24,7 @@ class SRTDB(object):
         self.db = db
         self.nameTable = nameTable
         self.listfields = self.getFields()
-        self.checkAndWriteToTheDB()
+        # self.checkAndWriteToTheDB()
         # for field in self.listfields:
         #     print(field)
 
@@ -50,7 +50,7 @@ class SRTDB(object):
         self.getAMan()
         self.getCode()
         self.checkAndWriteToTheDB()
-        exit(1)
+        # exit(1)
 
     # Обработка колонки название работ и материалов
     def processTheNameColumn(self):
@@ -60,28 +60,51 @@ class SRTDB(object):
         self.data['floor'] = self.getFloor()
         self.data['name_id'] = self.getNameID()
         del self.temp
-    
-    def checkAndWriteToTheDB(self):
-        where = ''
-        for key, val in self.data.items():
-            if type(val) == datetime.datetime:
-                val = val.strftime('%Y-%m-%d')
-                where += f' `{key}` = {val} AND\n'
-            elif type(val) == int:
-                where += f' `{key}` = {val} AND\n'
-            elif type(val) == float:
-                where += f' `{key}` = {round(val, 2)} AND\n'
-            elif type(val) == bool:
-                if val : val = 'TRUE'
+
+    def getWhereTocheckAndWriteToTheDB(self, data_list):
+        where = []
+        for key in data_list:
+            if type(self.data[key]) == datetime.datetime:
+                val = self.data[key].strftime('%Y-%m-%d')
+                where.append(['AND',f'`{key}` = "{val}"'])
+            elif type(self.data[key]) == int:
+                where.append(['AND',f'`{key}` = {self.data[key]}'])
+            elif type(self.data[key]) == float:
+                where.append(['AND',f' `{key}` = {round(self.data[key], 2)}'])
+            elif type(self.data[key]) == bool:
+                if self.data[key] : val = 'TRUE'
                 else: val = 'FALSE'
-                where += f' `{key}` = {val} AND\n'
+                where.append(['AND',f'`{key}` = {val}'])
+            elif self.data[key] == None:
+                where.append(['AND',f'`{key}` = NULL'])
             else:
-                where += f' `{key}` = "{self.db.escapingQuotes(val)}" AND\n'
-        text = where[1:-5]
-        print("===============================>\n",text)
-        #id = self.db.select(self.nameTable,{'columns':['id'],'where':[text]})
-        # print(id)
-    
+                where.append(['AND',f"`{key}` = '{self.data[key]}'"])
+        return where
+          
+    def checkAndWriteToTheDB(self):
+
+        where = self.getWhereTocheckAndWriteToTheDB(self.data.keys())
+        temppppp = self.db.selectAll(self.nameTable,{'columns':['*'],'where':['`id` > 0']})
+        # print('***************************************************************************')
+        # for key, value in temppppp.items():
+        #     if key != 'id':
+        #         if type(self.data[key]) == datetime.datetime:
+        #             print(key, value.strftime('%Y-%m-%d'), '==', self.data[key].strftime('%Y-%m-%d'), '--->',self.data[key].strftime('%Y-%m-%d') == value.strftime('%Y-%m-%d'))
+        #         else:
+        #             print(key, value, '==', self.data[key], '--->',value == self.data[key])
+        # exit('\n@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\nEXIT(checkAndWriteToTheDB)')
+        id = self.db.selectAll(self.nameTable,{'columns':['id'],'where':where})
+        if id == None:
+            lst = ['in_the_chart', 'number']
+            where = self.getWhereTocheckAndWriteToTheDB(lst)
+            id = self.db.selectCell(self.nameTable,{'columns':['id'],'where':where})
+            if id == None:
+                exit('exit => INSERT')
+                id = self.db.insert(self.nameTable,[list(self.data.keys()),[list(self.data.values()),]])
+            else:
+                print('update', self.data)
+                exit('exit => UPDATE')
+        return id
     def getAxes(self):
         result = []
         temp = re.sub(r'[МM]+[/\]+[HН]+','М_Н',str(self.temp.replace('_','/'))).replace('по оси','/')
@@ -264,7 +287,7 @@ class SRTDB(object):
         for x in COP:
             where = '`code` = "'+ x +'"'
             try:
-                id = self.db.select('code',{'where':[where],'columns':['id']})
+                id = self.db.selectCell('code',{'where':[where],'columns':['id']})
             except Exception as e:
                 print('\t\tERROR!!!', e)
 
@@ -341,8 +364,8 @@ class SRTDB(object):
         text = self.temp
         for key, val in delDict.items():
             text = re.sub(key, val, text)
-        text = self.removeDubleSpaces(text)
-        id = self.db.select('name_of_works_and_materials', {'columns':['id'],'where':[f'`name` = "{text}"']})
+        text = self.db.escapingQuotes(self.removeDubleSpaces(text))
+        id = self.db.selectCell('name_of_works_and_materials', {'columns':['id'],'where':[f'`name` = "{text}"']})
         if id == None:
             id = self.db.insert('name_of_works_and_materials',[['name'],[[text]]])
         return id
@@ -354,7 +377,7 @@ class SRTDB(object):
         temp = self.data['dimension'].replace('\n','/').strip()
         listDimension = temp.split('/')
         try:
-            id = self.db.select('dimension',{'columns':['id'], 'where':['`name` = "' + listDimension[0] + '"']})
+            id = self.db.selectCell('dimension',{'columns':['id'], 'where':['`name` = "' + listDimension[0] + '"',]})
         except Exception as e:
             print('\t\tERROR!!!', e)
         if id == None or id == False:
@@ -364,7 +387,7 @@ class SRTDB(object):
             try:
                 id = self.db.insert('dimension', [['name','multiplicity'],[[temp, multiplicity]]])
             except Exception as e:
-                print('\t\tERROR!!!', e)
+                print('getDimension -> \t\tERROR!!!', e)
         self.data['dimension'] = id
         if len(listDimension) > 1:
             listValue = str(self.data['dimension']).split('/')
@@ -409,7 +432,7 @@ class SRTDB(object):
                 if k == 'id_CC_engineer':
                     temp = temp.split()[0]
                     try:
-                        self.data[k] = self.db.select('people', {'columns':['id'], 'where': [' LOWER(`l_name`) = "' + temp + '"']})
+                        self.data[k] = self.db.selectCell('people', {'columns':['id'], 'where': [' LOWER(`l_name`) = "' + temp + '"']})
                     except Exception as e:
                         print('\t\tERROR!!!', e)
                 else:
@@ -417,12 +440,12 @@ class SRTDB(object):
                         temp = temp.replace(key, value)
                     temp = temp.split()
                     try:
-                        self.data[k] = self.db.select('people', {'columns':['id'], 'where': [' LOWER(`l_name`) = "' + temp[2] + '"']})
+                        self.data[k] = self.db.selectCell('people', {'columns':['id'], 'where': [' LOWER(`l_name`) = "' + temp[2] + '"']})
                     except Exception as e:
                         print('\t\tERROR!!!', e)
                     key = k + '_company'
                     try:
-                        self.data[key] = self.db.select('contractor', {'columns':['id'], 'where': [' LOWER(`name`) = "' + temp[1].replace(gap, ' ') + '"']})
+                        self.data[key] = self.db.selectCell('contractor', {'columns':['id'], 'where': [' LOWER(`name`) = "' + temp[1].replace(gap, ' ') + '"']})
                     except Exception as e:
                         print('\t\tERROR!!!', e)
 
