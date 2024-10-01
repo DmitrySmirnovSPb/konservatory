@@ -15,6 +15,8 @@ if __name__ == '__main__':
     
     ccav = getContent(link = link, globalLink = globalLink, Sheet = Sheet)
     db = DB()
+    # Очистка таблицы сс_accepted_volumes
+    # db.clearTable('сс_accepted_volumes')
 
     for row in ccav.Content:
         if row < 5: continue

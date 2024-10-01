@@ -17,6 +17,47 @@ class DB(object):
             else:
                 print(e)
 
+    # Выполнение любого запроса    
+    def anyRequest(self, request):
+        result = []
+        with self.mydb.cursor() as cursor:
+            cursor.execute(request)
+            for movie in cursor.fetchall():
+                result.append(movie)
+        return result
+        # cursor = self.mydb.cursor()
+        # cursor.execute(request)
+        # print(cursor)
+        # cursor.close()
+
+    # Очистка таблицы от записей и установка id = 1
+    def clearTable(self, nameTable:str):
+        try:
+            query =  'DELETE FROM `' + nameTable + '` WHERE `id` > 0;'
+            self.anyRequest(query)
+            query =  'ALTER TABLE `' + nameTable + '` AUTO_INCREMENT = 1;'
+            self.anyRequest(query)
+        except Error as e:
+            print('Не удалось очистить таблицу', nameTable)
+            print('ERROR:\n', e)
+
+    # Возвращает строку с экранированными слэшем кавычами и обратным слэшем
+    # А также с удаленными лишними пробелами
+    def escapingQuotes(self, string: str, test = False):
+        if string == None: return None
+        elif string == False: return False
+        elif string == True: return True
+        elif type(string) == float or type(string) == int: return string
+        if string == 'None': return None
+        elif string == 'False': return False
+        elif string == 'True': return True
+        temp = self.removeSpaces(string)
+        temp1 = temp.replace('\\','\\\\')
+        temp = temp1.replace(f'\'',f'\\\'').replace(f"\"",f"\\\"")
+        if test:
+            print(string,'->\n\t',temp)
+        return temp
+
     # Получить данные для подключения к базе
     def getConfig(self):
         f = Write(self.cur_dir + '\\data\\data.txt')
@@ -49,7 +90,8 @@ class DB(object):
 
         temp = add_employee[:-1]                    # Конец составления строки команды INSERT
         data = (*data,)                             # Преобразование списка в кортеж
-        # print(temp, data)
+        if 'test' in keys:
+            print(temp, data)
         cursor = self.mydb.cursor()
         cursor.execute(temp, data)
         emp_no = cursor.lastrowid
@@ -95,6 +137,8 @@ class DB(object):
                 strQuery += ','
             temp = strQuery[:-1]
             strQuery = temp
+        if 'test' in keys:
+            print(strQuery+'\b;')
         with self.mydb.cursor(dictionary=True) as cursor:
             cursor.execute(strQuery+';')
             temp = cursor.fetchall()
@@ -135,7 +179,7 @@ class DB(object):
             return result[0][columnName]
 
     # Обновить строку в таблице nameTable
-    def update(self, nameTable: str, data: dict):
+    def update(self, nameTable: str, data: dict, test = False):
         query = 'UPDATE `' + nameTable + '` SET '
         for i in data['data']:
             if i != 'where':
@@ -144,36 +188,14 @@ class DB(object):
         query = temp
         if 'where' in data:
             query += ' WHERE ' + self.where(data['where'])
-
+        if test:
+            print('Test DB.update(self, nameTable: str, data: dict, test = False):\n',query)
         with self.mydb.cursor() as cursor:
             cursor.execute(query)
             self.mydb.commit()
         cursor.close()
         return
 
-    # Выполнение любого запроса    
-    def anyRequest(self, request):
-        result = []
-        with self.mydb.cursor() as cursor:
-            cursor.execute(request)
-            for movie in cursor.fetchall():
-                result.append(movie)
-        return result
-        # cursor = self.mydb.cursor()
-        # cursor.execute(request)
-        # print(cursor)
-        # cursor.close()
-
-    # Очистка таблицы от записей и установка id = 1
-    def clearTable(self, nameTable:str):
-        try:
-            query =  'DELETE FROM `' + nameTable + '` WHERE `id` >= 1;'
-            self.anyRequest(query)
-            query =  'ALTER TABLE `' + nameTable + '` AUTO_INCREMENT = 1;'
-            self.anyRequest(query)
-        except Error as e:
-            print('Не удалось очистить таблицу', nameTable)
-            print('ERROR:\n', e)
 
     # WHERE список условий при пустом списке возвращает пустую строку, при 1 записи возвращает строку спервой записью
     # если несколько условий, то список состоит из списков, где 0 элемент - это AND, OR, а 1 элемент само условие
@@ -192,22 +214,6 @@ class DB(object):
             return result
         else:
             return ''
-
-    # Возвращает строку с экранированными слэшем кавычами и обратным слэшем
-    # А также с удаленными лишними пробелами
-    def escapingQuotes(self, string: str):
-        if string == None: return None
-        elif string == False: return False
-        elif string == True: return True
-        elif type(string) == float or type(string) == int: return string
-        temp = ' '.join(string.split())
-        if string == 'None': return None
-        elif string == 'False': return False
-        elif string == 'True': return True
-        temp1 = temp.replace('\\','\\\\')
-        temp = temp1.replace("'","\\'")
-        return temp.replace('"','\\"')
-
     # Формирует запрос JOIN
     def joinSelect(self, tn:str, data: dict):
         result = ''

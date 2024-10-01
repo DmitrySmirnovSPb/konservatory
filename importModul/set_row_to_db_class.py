@@ -82,29 +82,24 @@ class SRTDB(object):
         return where
           
     def checkAndWriteToTheDB(self):
+        listKeys = ['in_the_chart', 'number', 'number_in_order', 'name_id']
+        listKeys.append('date_of_the_call' if self.data['in_the_chart'] else 'actual_date')
+        where = self.getWhereTocheckAndWriteToTheDB(listKeys)
 
-        where = self.getWhereTocheckAndWriteToTheDB(self.data.keys())
-        temppppp = self.db.selectAll(self.nameTable,{'columns':['*'],'where':['`id` > 0']})
-        # print('***************************************************************************')
-        # for key, value in temppppp.items():
-        #     if key != 'id':
-        #         if type(self.data[key]) == datetime.datetime:
-        #             print(key, value.strftime('%Y-%m-%d'), '==', self.data[key].strftime('%Y-%m-%d'), '--->',self.data[key].strftime('%Y-%m-%d') == value.strftime('%Y-%m-%d'))
-        #         else:
-        #             print(key, value, '==', self.data[key], '--->',value == self.data[key])
-        # exit('\n@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\nEXIT(checkAndWriteToTheDB)')
-        id = self.db.selectAll(self.nameTable,{'columns':['id'],'where':where})
-        if id == None:
-            lst = ['in_the_chart', 'number']
-            where = self.getWhereTocheckAndWriteToTheDB(lst)
-            id = self.db.selectCell(self.nameTable,{'columns':['id'],'where':where})
-            if id == None:
-                exit('exit => INSERT')
-                id = self.db.insert(self.nameTable,[list(self.data.keys()),[list(self.data.values()),]])
-            else:
-                print('update', self.data)
-                exit('exit => UPDATE')
+        # Проверка наличие записи в БД по полям:
+        #                                       - наличие в заявке вызова Заказчика
+        #                                       - id отчёта
+        #                                       - номер по порядку в отчёте
+        #                                       - id Названия работы или материала.
+        #                                       - дата в заявке вызова Заказчика или дата фактического предъявления если вне графика
+
+        id = self.db.selectCell(self.nameTable,{'columns':['id'],'where':where})
+
+        if id == None :                         # Если запись отсутствует, заносится новая звпись
+            id = self.db.insert(self.nameTable,[list(self.data.keys()),[list(self.data.values()),]])
+
         return id
+
     def getAxes(self):
         result = []
         temp = re.sub(r'[МM]+[/\]+[HН]+','М_Н',str(self.temp.replace('_','/'))).replace('по оси','/')
@@ -121,7 +116,7 @@ class SRTDB(object):
         if len(result) > 0:
             for i in result:
                 temp.append(self.sortAxes(i.split('/')))
-        dlt = [self.axesMat, 'в/о', 'в осях', r',{2,}', r'\s[.;]', 'между осями']
+        dlt = [self.axesMat, r'в\s?/\s?о', 'в осях', r',{2,}', r'\s[.;]', 'между осями']
         for mat in dlt:
             self.temp = re.sub(mat,'', self.temp)
         self.temp = self.removeDubleSpaces(self.temp)
@@ -390,11 +385,11 @@ class SRTDB(object):
                 print('getDimension -> \t\tERROR!!!', e)
         self.data['dimension'] = id
         if len(listDimension) > 1:
-            listValue = str(self.data['dimension']).split('/')
+            listValue = str(self.data['value']).replace(',','.').split('/')
             text = ''
             if len(listValue) > 1:
                 text = str(listValue) + str(listDimension)
-                self.data['value'] = listValue[0]
+                self.data['value'] = float(listValue[0])
                 if len(listValue) == len(listDimension):
                     for i in range(1,len(listValue)):
                         text += listValue[i] + listDimension[i] + '; '
@@ -427,12 +422,12 @@ class SRTDB(object):
 
         for k in lst:
             if self.data[k] != None:
-                temp = self.data[k].strip().lower()
+                temp = flag = self.data[k].strip().lower()
 
                 if k == 'id_CC_engineer':
                     temp = temp.split()[0]
                     try:
-                        self.data[k] = self.db.selectCell('people', {'columns':['id'], 'where': [' LOWER(`l_name`) = "' + temp + '"']})
+                        self.data[k] = self.db.selectCell('people', {'columns':['id'], 'where': [' LOWER(`l_name`) = "' + temp + '"'], 'test':True})
                     except Exception as e:
                         print('\t\tERROR!!!', e)
                 else:
@@ -448,8 +443,11 @@ class SRTDB(object):
                         self.data[key] = self.db.selectCell('contractor', {'columns':['id'], 'where': [' LOWER(`name`) = "' + temp[1].replace(gap, ' ') + '"']})
                     except Exception as e:
                         print('\t\tERROR!!!', e)
+                    if self.data[k] == None:
+                        print(f'self.data[k] == None:{k}', flag)
+                        exit('getAMan(self)')
 
-    # Получить список полей
+    # Получить список полей таблицы DB
     def getFields(self):
         lst = []
         try:
