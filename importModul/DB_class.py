@@ -66,7 +66,7 @@ class DB(object):
         return result
 
     # Новая запись в таблицу nameTable
-    def insert(self, nameTable:str, rowData:list):
+    def insert(self, nameTable:str, rowData:list, test = False):
         # Начало составления строи команды INSERT
         temp = "INSERT INTO `" + nameTable + "` ("
         count = 0
@@ -90,7 +90,7 @@ class DB(object):
 
         temp = add_employee[:-1]                    # Конец составления строки команды INSERT
         data = (*data,)                             # Преобразование списка в кортеж
-        if 'test' in keys:
+        if test:
             print(temp, data)
         cursor = self.mydb.cursor()
         cursor.execute(temp, data)

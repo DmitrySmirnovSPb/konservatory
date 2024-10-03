@@ -5,6 +5,8 @@ class SRTDB(object):
 
     data = {}
 
+    dictPeople = {'id_contractor':'Представитель подрядчика', 'id_actual_contractor':'Представитель исполнителя работ', 'id_CC_engineer':'Инженер строительного контроля'}
+
     counter = 0
 
     axesMatList = [
@@ -414,38 +416,73 @@ class SRTDB(object):
 
     # Получить список ID людей и компаний    
     def getAMan(self):
-        lst = ['id_contractor', 'id_actual_contractor', 'id_CC_engineer']
-        gap = '-@#$-'
-        replacement = {
-            'ао«дока':'ао дока', '«':'', '»':'','\n':' ', 'cк дока':'ск'+gap+'дока', 'ск ':'','-центр':'', '-инжиниринг':'', 'художественно-реставрационная группа ':'','нв билдинг':'нв'+gap+'билдинг','ук арт-глас':'арт-глас','"':'','новое время':'новое'+gap+'время','политех строй':'политехстрой', 'лепной двор':'лепной'+gap+'двор','ван строй':'ван'+gap+'строй','метеор лифт':'метеор'+gap+'лифт', 'янтарная прядь-паркет': 'янтарная'+gap+'прядь-паркет', 'пгс систем':'пгс'+gap+'систем', 'гранит тех':'гранит'+gap+'тех'
-        }
+        # gap = '-@#$-'
+        # replacement = {
+        #     'ао«дока':'ао дока', '«':'', '»':'','\n':' ', 'cк дока':'ск'+gap+'дока', 'ск ':'','-центр':'', '-инжиниринг':'', 'художественно-реставрационная группа ':'','нв билдинг':'нв'+gap+'билдинг','ук арт-глас':'арт-глас','"':'','новое время':'новое'+gap+'время','политех строй':'политехстрой', 'лепной двор':'лепной'+gap+'двор','ван строй':'ван'+gap+'строй','метеор лифт':'метеор'+gap+'лифт', 'янтарная прядь-паркет': 'янтарная'+gap+'прядь-паркет', 'пгс систем':'пгс'+gap+'систем', 'гранит тех':'гранит'+gap+'тех'
+        # }
 
-        for k in lst:
+        for k in list(self.dictPeople.keys()):
             if self.data[k] != None:
-                temp = flag = self.data[k].strip().lower()
-
+                flag = self.data[k]
+                temp = self.replasement(flag) # flag.strip().lower()
                 if k == 'id_CC_engineer':
-                    temp = temp.split()[0]
+                    # temp = self.replasement(flag)
                     try:
-                        self.data[k] = self.db.selectCell('people', {'columns':['id'], 'where': [' LOWER(`l_name`) = "' + temp + '"'], 'test':True})
+                        self.data[k] = self.db.selectCell('people', {'columns':['id'], 'where': [' LOWER(`l_name`) = "' + temp[0] + '"']})
                     except Exception as e:
                         print('\t\tERROR!!!', e)
                 else:
-                    for key, value in replacement.items():
-                        temp = temp.replace(key, value)
-                    temp = temp.split()
+                    # for key, value in replacement.items():
+                    #     temp = temp.replace(key, value)
+                    # temp = temp.split()
                     try:
                         self.data[k] = self.db.selectCell('people', {'columns':['id'], 'where': [' LOWER(`l_name`) = "' + temp[2] + '"']})
                     except Exception as e:
                         print('\t\tERROR!!!', e)
                     key = k + '_company'
                     try:
-                        self.data[key] = self.db.selectCell('contractor', {'columns':['id'], 'where': [' LOWER(`name`) = "' + temp[1].replace(gap, ' ') + '"']})
+                        self.data[key] = self.db.selectCell('contractor', {'columns':['id'], 'where': [' LOWER(`name`) = "' + temp[1] + '"']}) # .replace(gap, ' ')
                     except Exception as e:
                         print('\t\tERROR!!!', e)
                     if self.data[k] == None:
-                        print(f'self.data[k] == None:{k}', flag)
-                        exit('getAMan(self)')
+                        self.inputPeople(k, flag)
+
+    def inputPeople(self, key, text):
+
+        print(f'self.data[\'{key}\'] == None:........', text.replace('\n', ' '))
+        print(f'Система не нашла "{text}" в базе данных. Введите, пожалуйста, необходимые данные.\n\n * - обязательны поля для заполнения.\n')
+        stepDict = {'f_name':['имя',32],
+            'l_name':['фамилию *)',32],
+            'm_name':['отчество',32],
+            'initials':['инициалы',6],
+            'position':['должность',100],
+            'email':['адрес элетронной почты',32],
+            'phone_number':['номер телефона',20]}
+        resultDict = {}
+
+        while len(stepDict) > 0:
+            stopList =[]
+            for k, textInput in stepDict.items():
+                resultDict[k] = input(f'Введите, пожалуйста, {textInput[0]} : ')
+                if len(resultDict[k]) <= textInput[1]:
+                    stopList.append(k)
+            for k in stopList:
+                stepDict.pop(k)
+
+        exit('getAMan(self) -> inputPeople(self, key, text)')
+
+    def replasement(self, text):
+        gap = '-@#$-'
+        replacement = {
+            'ао«дока':'ао дока', '«':'', '»':'','\n':' ', 'cк дока':'ск'+gap+'дока', 'ск ':'','-центр':'', '-инжиниринг':'', 'художественно-реставрационная группа ':'','нв билдинг':'нв'+gap+'билдинг','ук арт-глас':'арт-глас','"':'','новое время':'новое'+gap+'время','политех строй':'политехстрой', 'лепной двор':'лепной'+gap+'двор','ван строй':'ван'+gap+'строй','метеор лифт':'метеор'+gap+'лифт', 'янтарная прядь-паркет': 'янтарная'+gap+'прядь-паркет', 'пгс систем':'пгс'+gap+'систем', 'гранит тех':'гранит'+gap+'тех'
+        }
+        text = text.strip().lower()
+        for key, value in replacement.items():
+            text = text.replace(key, value)
+        result = []
+        for step in text.split():
+            result.append(step.replace(gap, ' '))
+        return result
 
     # Получить список полей таблицы DB
     def getFields(self):
@@ -470,6 +507,6 @@ class SRTDB(object):
     # Удалить все двойные и более пробельные символы
     def removeDubleSpaces(self, string:str):
         while '  ' in string:
-            string = re.sub('  ', ' ', string)
+            string = re.sub(r'\s{2}', ' ', string)
             # string = string.replace('  ', ' ')
         return string.strip()
