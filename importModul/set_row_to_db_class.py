@@ -98,7 +98,7 @@ class SRTDB(object):
         id = self.db.selectCell(self.nameTable,{'columns':['id'],'where':where})
 
         if id == None :                         # Если запись отсутствует, заносится новая звпись
-            id = self.db.insert(self.nameTable,[list(self.data.keys()),[list(self.data.values()),]])
+            id = self.db.insert(self.nameTable,[list(self.data.keys()),[list(self.data.values()),]], test = True)
 
         return id
 
@@ -445,14 +445,15 @@ class SRTDB(object):
                     except Exception as e:
                         print('\t\tERROR!!!', e)
                     if self.data[k] == None:
-                        self.inputPeople(k, flag)
+                        self.data[key] = self.inputPeople(k, temp, key)
+                        # exit('getAMan(self) -> inputPeople(self, key, text)')
 
-    def inputPeople(self, key, text):
-
-        print(f'self.data[\'{key}\'] == None:........', text.replace('\n', ' '))
+    def inputPeople(self, key, listText, ):
+        text = ' '.join(listText)
+        print(f'self.data[\'{key}\'] == None:........', text )
         print(f'Система не нашла "{text}" в базе данных. Введите, пожалуйста, необходимые данные.\n\n * - обязательны поля для заполнения.\n')
         stepDict = {'f_name':['имя',32],
-            'l_name':['фамилию *)',32],
+            'l_name':['фамилию *',32],
             'm_name':['отчество',32],
             'initials':['инициалы',6],
             'position':['должность',100],
@@ -463,18 +464,29 @@ class SRTDB(object):
         while len(stepDict) > 0:
             stopList =[]
             for k, textInput in stepDict.items():
-                resultDict[k] = input(f'Введите, пожалуйста, {textInput[0]} : ')
+                resultDict[k] = input(f'Введите, пожалуйста, {textInput[0]} (не более {textInput[1]} символов): ')
+                if k == 'l_name' and len(resultDict[k]) == 0 :
+                    continue
                 if len(resultDict[k]) <= textInput[1]:
                     stopList.append(k)
             for k in stopList:
                 stepDict.pop(k)
-
-        exit('getAMan(self) -> inputPeople(self, key, text)')
+        id_contractor = self.db.selectCell('contractor', {'columns':['id'], 'where':[f'LOWER(`name`) = "{listText[1]}"'],'test':True})
+        if type(id_contractor) != int:
+            print(f'\nСистема не нашла "{listText[0].upper()} {listText[1].upper()}" в базе данных. Введите, пожалуйста, необходимые данные.\n\n * - обязательны поля для заполнения.\n')
+            name = listText[1]
+            full_name = self.db.escapingQuotes(input('Введите, пожалуйста, полное название организации * (не более 128 символов): '))
+            abbreviated_name = self.db.escapingQuotes(input('Введите, пожалуйста, сокращенное название организации (не более 50 символов): '))
+            id_contractor = self.db.insert('contractor',[['name','full_name','abbreviated_name'], [[name, full_name, abbreviated_name]]], test = True)
+        resultDict['id_contractor'] = id_contractor
+        keyList = list(resultDict.keys())
+        valueList = list(resultDict.values())
+        return self.db.insert('people',[keyList, [valueList]], test = True)
 
     def replasement(self, text):
         gap = '-@#$-'
         replacement = {
-            'ао«дока':'ао дока', '«':'', '»':'','\n':' ', 'cк дока':'ск'+gap+'дока', 'ск ':'','-центр':'', '-инжиниринг':'', 'художественно-реставрационная группа ':'','нв билдинг':'нв'+gap+'билдинг','ук арт-глас':'арт-глас','"':'','новое время':'новое'+gap+'время','политех строй':'политехстрой', 'лепной двор':'лепной'+gap+'двор','ван строй':'ван'+gap+'строй','метеор лифт':'метеор'+gap+'лифт', 'янтарная прядь-паркет': 'янтарная'+gap+'прядь-паркет', 'пгс систем':'пгс'+gap+'систем', 'гранит тех':'гранит'+gap+'тех'
+            'ао«дока':'ао дока', '«':'', '»':'','\n':' ', 'cк дока':'ск'+gap+'дока', 'ск ':'','-центр':'', '-инжиниринг':'', 'художественно-реставрационная группа ':'','нв билдинг':'нв'+gap+'билдинг','ук арт-глас':'арт-глас','"':'','новое время':'новое'+gap+'время','политех строй':'политехстрой', 'лепной двор':'лепной'+gap+'двор','ван строй':'ван'+gap+'строй','метеор лифт':'метеор'+gap+'лифт', 'янтарная прядь-паркет': 'янтарная'+gap+'прядь-паркет', 'пгс систем':'пгс'+gap+'систем', 'гранит тех':'гранит'+gap+'тех', 'дтм спб':'дтм'+gap+'спб','строй сити':'строй'+gap+'сити'
         }
         text = text.strip().lower()
         for key, value in replacement.items():
