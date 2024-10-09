@@ -19,13 +19,14 @@ class SRTDB(object):
         r'\d{1,2}\s?-\s?\d{1,2}\s?[\\/_]\s?[А-Яа-яABCEHKMOPTX]_?Н?',
         r'\d{1,2}\s?[\\/_]\s?[А-Яа-яABCEHKMOPTX]_?Н?'
     ]
-    
+
     axesMat =  r'[\s,(]\d{,2}\s?-?\s?\d{1,2}\s?[\\/и]\s?[А-Яа-яA-Z]+[_\/]?Н?\s?-?\s?[А-Яа-яA-Z]?[_\/]?Н?|[ ,(]\d{,2}\s?-?\s?\d{1,2}\s?[\\/и]\s?[А-Яа-яA-Z]?[_\/]?Н?\s?-?\s?[А-Яа-яA-Z][_\/]?Н?$|[ ,(][А-Яа-яA-Z]{1}[_\/]?Н?\s?-?\s?[А-Яа-яA-Z]{0,1}[_\/]?Н?\s?[\\/и]\s?\d{,2}\s?-?\s?\d{1,2}|[ ,(][А-Яа-яA-Z]{1}[_\/]?Н?\s?-?\s?[А-Яа-яA-Z]{0,1}[_\/]?Н?\s?[\\/и]\s?\d{,2}\s?-?\s?\d{1,2}$'
 
     def __init__(self, nameTable : str, db: DB):
         self.db = db
         self.nameTable = nameTable
         self.listfields = self.getFields()
+        self.test = True
         # self.checkAndWriteToTheDB()
         # for field in self.listfields:
         #     print(field)
@@ -76,16 +77,19 @@ class SRTDB(object):
             elif type(self.data[key]) == bool:
                 if self.data[key] : val = 'TRUE'
                 else: val = 'FALSE'
-                where.append(['AND',f'`{key}` = {val}'])
+                where.append(['AND',f'`{key}` is {val}'])
             elif self.data[key] == None:
-                where.append(['AND',f'`{key}` = NULL'])
+                where.append(['AND',f'`{key}` is NULL'])
             else:
                 where.append(['AND',f"`{key}` = '{self.data[key]}'"])
         return where
           
     def checkAndWriteToTheDB(self):
         listKeys = ['in_the_chart', 'number', 'number_in_order', 'name_id']
-        listKeys.append('date_of_the_call' if self.data['in_the_chart'] else 'actual_date')
+        if self.data['date_of_the_call'] != None:
+            listKeys.append('date_of_the_call')
+        else:
+            listKeys.append('actual_date')
         where = self.getWhereTocheckAndWriteToTheDB(listKeys)
 
         # Проверка наличие записи в БД по полям:
@@ -98,6 +102,12 @@ class SRTDB(object):
         id = self.db.selectCell(self.nameTable,{'columns':['id'],'where':where})
 
         if id == None :                         # Если запись отсутствует, заносится новая звпись
+            if self.test:
+                print(self.db.selectCell(self.nameTable,{'columns':['id'],'where':where, 'test': True}))
+                print('self.data[\'date_of_the_call\']',self.data['date_of_the_call'])
+                print('self.data[\'actual_date\']',self.data['actual_date'])
+                print('where', where)
+                exit(' def checkAndWriteToTheDB(self): не нашли в базе')
             id = self.db.insert(self.nameTable,[list(self.data.keys()),[list(self.data.values()),]], test = True)
 
         return id
@@ -118,7 +128,7 @@ class SRTDB(object):
         if len(result) > 0:
             for i in result:
                 temp.append(self.sortAxes(i.split('/')))
-        dlt = [self.axesMat, r'в\s?/\s?о', 'в осях', r',{2,}', r'\s[.;]', 'между осями']
+        dlt = self.axesMatList + [r'в\s?/\s?о', 'в осях', r',{2,}', r'\s[.;,]',r'[.;,]{2,}' , 'между осями']
         for mat in dlt:
             self.temp = re.sub(mat,'', self.temp)
         self.temp = self.removeDubleSpaces(self.temp)
@@ -329,7 +339,7 @@ class SRTDB(object):
         text = self.temp
 
         tempFloor = {}
-        listMat = [r'([+-]\d+[.,]\d{1,3})', r'[на]{,2}\s(\d?,?\s*)+?эт\.?[аже]{,3}', r'на отм\.', r'отм\.', r'\s+[,.]', r'\bнад\s\d\sэт[.ажом]{1,4}', r'\sнад\sподвалом', r'(\s[сотпд]{,2}\s*([+-]\d+[.,]\d{1,3}))?', r'\bподвал\b', r'\bс\s+до\b', '\bнадом\b']
+        listMat = [r'([+-]\d+[.,]\d{1,3})', r'[на]{,2}\s(\d?,?\s*)+?эт\.?[аже]{,3}', r'на отм\.', r'отм\.', r'\s+[,.]', r'\bнад\s\d\sэт[.ажом]{1,4}', r'\sнад\sподвалом', r'(\s[сотпд]{,2}\s*([+-]\d+[.,]\d{1,3}))?', r'\bподвал\b', r'\bс\s+до\b', '\bнадом\b', r'на отметке']
 
         altitude_mark = re.findall(listMat[0], text)
         if len(altitude_mark) > 0:
@@ -357,13 +367,16 @@ class SRTDB(object):
         return json.dumps(tempFloor)
 
     def getNameID(self):
-        delDict = {r'\s+:': '', r'\.{2,}':'.'}
+        delDict = {r'\s+:': '', r'\.{2,}':'.', r'(;\s?){2,}': ';', r'(№,\s?){1,}': '', r'(\s?;){1}': ';'}
         text = self.temp
         for key, val in delDict.items():
             text = re.sub(key, val, text)
         text = self.db.escapingQuotes(self.removeDubleSpaces(text))
         id = self.db.selectCell('name_of_works_and_materials', {'columns':['id'],'where':[f'`name` = "{text}"']})
         if id == None:
+            if self.test:
+                print(self.db.selectCell('name_of_works_and_materials', {'columns':['id'],'where':[f'`name` = "{text}"'],'test':True}))
+                exit('def getNameID(self):')
             id = self.db.insert('name_of_works_and_materials',[['name'],[[text]]])
         return id
 
@@ -448,10 +461,10 @@ class SRTDB(object):
                         self.data[key] = self.inputPeople(k, temp, key)
                         # exit('getAMan(self) -> inputPeople(self, key, text)')
 
-    def inputPeople(self, key, listText, ):
+    def inputPeople(self, key, listText, KEY):
         text = ' '.join(listText)
         print(f'self.data[\'{key}\'] == None:........', text )
-        print(f'Система не нашла "{text}" в базе данных. Введите, пожалуйста, необходимые данные.\n\n * - обязательны поля для заполнения.\n')
+        print(f'KEY ==>  {KEY}\nСистема не нашла "{text}" в базе данных. Введите, пожалуйста, необходимые данные.\n\n * - обязательны поля для заполнения.\n')
         stepDict = {'f_name':['имя',32],
             'l_name':['фамилию *',32],
             'm_name':['отчество',32],
