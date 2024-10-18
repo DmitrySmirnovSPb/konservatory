@@ -19,7 +19,7 @@ if __name__ == '__main__':
     # db.clearTable('сс_accepted_volumes')
 
     for row in ccav.Content:
-        if row < 16276: continue #5
+        if row < 5: continue #5  16276
         # if row > 35: break
 
         data = {}

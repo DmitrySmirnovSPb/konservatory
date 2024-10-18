@@ -90,7 +90,8 @@ class DB(object):
 
         temp = add_employee[:-1]                    # Конец составления строки команды INSERT
         data = (*data,)                             # Преобразование списка в кортеж
-        if test:
+        #if test:
+        if nameTable == 'report':
             print(temp, data)
         cursor = self.mydb.cursor()
         cursor.execute(temp, data)

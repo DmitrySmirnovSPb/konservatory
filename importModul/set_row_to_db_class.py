@@ -26,7 +26,7 @@ class SRTDB(object):
         self.db = db
         self.nameTable = nameTable
         self.listfields = self.getFields()
-        self.test = True
+        self.test = False
         # self.checkAndWriteToTheDB()
         # for field in self.listfields:
         #     print(field)
@@ -86,7 +86,7 @@ class SRTDB(object):
 
     def getNumberID(self):
         date = year = self.data['actual_date'] if self.data['actual_date'] != None else self.data['date_of_the_call']
-        date = datetime.datetime.strftime(date, f'%d.%m.%Y')
+        date = datetime.datetime.strftime(date, f'%Y-%m-%d')
         id = self.db.selectCell('report', {'columns': ['id'], 'where':[['AND',f'YEAR("{date}") = YEAR(`date`)'], ['AND',f'{self.data["number"]} = `number`']], 'test' : True})
         if id == None:
             print('\n' + '#'*100)
@@ -122,13 +122,14 @@ class SRTDB(object):
                     return {'flag':True, 'error': 'Одно целое число (В фомате int)'}
                 return {'flag':False, 'error': None, 'value':int(result[0])}
             case 'date':
-                result  = re.findall(r'\d{4}-\d{2}-\d{2}', data)
-                if result == None or len(result) == 0:
+                date  = re.findall(r'\d{4}-\d{2}-\d{2}', data)
+                if date == None or len(date) == 0:
                     return {'flag':True, 'error': 'В фомате ГГГГ-ММ-ДД'}
                 elif len(result) > 1:
                     return {'flag':True, 'error': 'Одну дату в фомате ГГГГ-ММ-ДД'}
                 try:
-                    result = datetime.datetime.strptime(result[0], f'%Y-%m-%d')
+                    datetime.datetime.strptime(date[0], f'%Y-%m-%d')
+                    result = date[0]
                 except Exception as e:
                     return {'flag':True, 'error': f'Не корректная дата. Введите коррекную дату.\nОшибка: {e}'}
                 return {'flag':False, 'error': None, 'value':result}
