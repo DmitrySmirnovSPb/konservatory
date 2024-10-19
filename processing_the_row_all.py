@@ -17,68 +17,55 @@ if __name__ == '__main__':
     db = DB()
     # Очистка таблицы сс_accepted_volumes
     # db.clearTable('сс_accepted_volumes')
+    #######################################       Список полей dictField      ###########################################
+    # in_the_chart                  В графике вызова Заказчика или нет                                                  #
+    # call_Customer                 Номер заявки вызова заказчика                                                       #
+    # number_the_Customer           номер в заявке вызова Заказчика                                                     #
+    # number_in_b_estimate          Предпологаемый номер по порядку в смете контракта в формате JSON или Null           #
+    # number                        ID отчёта report -> id                                                              #
+    # number_in_order               номер по порядку в отчёте                                                           #
+    # name_id                       ID Названия работы или материала. name_of_works_and_materials -> id                 #
+    # dimension                     ID Единицы измерения dimension -> id                                                #
+    # value                         Количество фактически принятых работ                                                #
+    # code                          Шифр проекта, ЖАН или другое обоснование работ в формате JSON или Null              #
+    # date_of_the_call              Дата вызова заказчика (План)                                                        #
+    # actual_date                   Дата фактического предъявления работ                                                #
+    # id_contractor                 ID представителя субподрядчика people -> id                                         #
+    # id_contractor_company         ID компании представителя субподрядчика contractor -> id                            #
+    # id_actual_contractor          ID представителя фактического исполнителя people -> id                              #
+    # id_actual_contractor_company  ID компании фактического исполнителя на момент производства работ contractor -> id  #
+    # id_CC_engineer                ID инженера строительного контроля предоставившего информацию people -> id          #
+    # result                        Результат предъявления работ:                                                       #
+    #                                 1 - Принято                                                                       #
+    #                                 2 - Не принято                                                                    #
+    #                                 3 - Не предъявлено                                                                #
+    #                                 4 - Принято в предыдущий период                                                   #
+    # axes                          Оси в которых производились работы в формате JSON или Null                          #
+    # room                          Номера помещений в формате JSON или Null                                            #
+    # floor                         Этаж или отметки в формате JSON или Null                                            #
+    # note                          Примечание                                                                          #
+    #####################################################################################################################
+
+    dictField = {
+        'in_the_chart':5,'call_Customer':1,'number_the_Customer':2,'number_in_b_estimate':3,'number':4, 'number_in_order':6,'name_id':7,'dimension':8,'value':9,'code':10,'date_of_the_call':11,'actual_date':12,'id_contractor':13,'id_contractor_company':13,'id_actual_contractor':14,'id_actual_contractor_company':14,'id_CC_engineer':17,'result':15,'axes':7,'room':7,'floor':7,'note':15
+    }
 
     for row in ccav.Content:
         if row < 5: continue #5  16276
         # if row > 35: break
-
+#  Объявление словаря для строки, занесение значений из строки файла link
         data = {}
-        # В графике вызова Заказчика или нет
-        data['in_the_chart'] = True if ccav.Content[row][5] == '+' else False
-        # Номер заявки вызова заказчика
-        data['call_Customer'] = ccav.Content[row][1]
-        # номер в заявке вызова Заказчика
-        data['number_the_Customer'] = ccav.Content[row][2]
-        # Предпологаемый номер по порядку в смете контракта в формате JSON или Null
-        data['number_in_b_estimate'] = ccav.Content[row][3]
-        # id отчёта report -> id
-        data['number'] = ccav.Content[row][4]
-        # номер по порядку в отчёте
-        data['number_in_order'] = ccav.Content[row][6]
-        # id Названия работы или материала. name_of_works_and_materials -> id
-        data['name_id'] = ccav.Content[row][7]
-        # id Единицы измерения dimension -> id
-        data['dimension'] = ccav.Content[row][8]
-        # Количество фактически принятых работ
-        data['value'] = ccav.Content[row][9]
-        # Шифр проекта, ЖАН или другое обоснование работ в формате JSON или Null
-        data['code'] = ccav.Content[row][10]
-        # Дата вызова заказчика (План)
-        data['date_of_the_call'] = ccav.Content[row][11]
-        # Дата фактического предъявления работ
-        data['actual_date'] = ccav.Content[row][12]
-        # ID представителя субподрядчика people -> id
-        data['id_contractor'] = ccav.Content[row][13]
-        # ID компании представителя субподрядчика contractor -> id
-        data['id_contractor_company'] = ccav.Content[row][13]
-        # ID представителя фактического исполнителя people -> id
-        data['id_actual_contractor'] = ccav.Content[row][14]
-        # ID компании фактического исполнителя на момент производства работ contractor -> id
-        data['id_actual_contractor_company'] = ccav.Content[row][14]
-        # ID инженера строительного контроля предоставившего информацию people -> id
-        data['id_CC_engineer'] = ccav.Content[row][17]
-        # Результат предъявления работ:
-        #   1 - Принято
-        #   2 - Не принято
-        #   3 - Не предъявлено
-        #   4 - Принято в предыдущий период
-        data['result'] = ccav.Content[row][15]
-        # Оси в которых производились работы в формате JSON или Null
-        data['axes'] = ccav.Content[row][7]
-        # Номера помещений в формате JSON или Null
-        data['room'] = ccav.Content[row][7]
-        # Этаж или отметки в формате JSON или Null
-        data['floor'] = ccav.Content[row][7]
-        # Примечание
-        data['note'] = ccav.Content[row][15]
+        for key, column in dictField.items():
+            if key == 'in_the_chart':
+                data[key] = True if ccav.Content[row][column] == '+' else False
+            else:
+                data[key] = ccav.Content[row][column]
 
-        print(row)
+#        print(row)
 
         srtdb = SRTDB(tableName, db)
 
         srtdb.dataInitiation(data)
-
-        # print()
 
         # exit(0)
 

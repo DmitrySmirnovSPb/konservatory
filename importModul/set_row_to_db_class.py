@@ -8,6 +8,7 @@ class SRTDB(object):
     dictPeople = {'id_contractor':'Представитель подрядчика', 'id_actual_contractor':'Представитель исполнителя работ', 'id_CC_engineer':'Инженер строительного контроля'}
 
     counter = 0
+    test = False
 
     axesMatList = [
         r'[А-Яа-яABCEHKMOPTX]_?Н?\s?-\s?[А-Яа-яABCEHKMOPTX]_?Н?\s?[\\/_]\s?\d{1,2}\s?-\s?\d{1,2}',
@@ -26,7 +27,6 @@ class SRTDB(object):
         self.db = db
         self.nameTable = nameTable
         self.listfields = self.getFields()
-        self.test = False
         # self.checkAndWriteToTheDB()
         # for field in self.listfields:
         #     print(field)
@@ -87,25 +87,26 @@ class SRTDB(object):
     def getNumberID(self):
         date = year = self.data['actual_date'] if self.data['actual_date'] != None else self.data['date_of_the_call']
         date = datetime.datetime.strftime(date, f'%Y-%m-%d')
-        id = self.db.selectCell('report', {'columns': ['id'], 'where':[['AND',f'YEAR("{date}") = YEAR(`date`)'], ['AND',f'{self.data["number"]} = `number`']], 'test' : True})
+        id = self.db.selectCell('report', {'columns': ['id'], 'where':[['AND',f'YEAR("{date}") = YEAR(`date`)'], ['AND',f'{self.data["number"]} = `number`']]})
         if id == None:
             print('\n' + '#'*100)
             print(f'#\tСистема не нащла отчет №{self.data["number"]} за {datetime.datetime.strftime(year, r"%Y")} г.')
             print('#'*100 + '\n')
-            id = self.inputReport()
+            id = self.inputReport(self.data["number"])
         if type(id) != int:
             exit('def getNumberID(self):')
         return id
         
-    def inputReport(self):
-        listKeys = {'date':['date','Дата создания отчёта'], 'date_start':['date','Дата начала отчетного периода'], 'date_finish':['date','Дата окончания отчётного периода'], 'on_schedule':['int','Количество вызовов по графику'], 'off_schedule':['int','Количество вызовов вне графика'], 'not_presented':['int','Количество не предъявленых работ по графику'], 'not_accepted_for_various_reasons':['int','Количество вызовов не принятых по различным причинам по графику'], 'accepted_in_the_previous_period':['int','Количество ранее принятых работ'], 'accepted':['int','Количество принятых работ.']}
-        dataInput = {}
-        for value, dataType in listKeys.items():#'number':['int','Номер отчета'], 
+    def inputReport(self, number):
+        listKeys = {'date':['date','Дата создания отчёта в фомате ДД.ММ.ГГГГ'], 'date_start':['date','Дата начала отчетного периода в фомате ДД.ММ.ГГГГ'], 'date_finish':['date','Дата окончания отчётного периода в фомате ДД.ММ.ГГГГ'], 'on_schedule':['int','Количество вызовов по графику'], 'off_schedule':['int','Количество вызовов вне графика'], 'not_presented':['int','Количество не предъявленых работ по графику'], 'not_accepted_for_various_reasons':['int','Количество вызовов не принятых по различным причинам по графику'], 'accepted_in_the_previous_period':['int','Количество ранее принятых работ'], 'accepted':['int','Количество принятых работ.']}
+        dataInput = {'number':number}
+        for value, dataType in listKeys.items():
             temp = {'error': None}
             flag =True 
             while flag:
                 if temp['error'] != None:
-                    print(f'!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\nОшибка ввода данных пожалуйста введите правильные данные!\n{temp["error"]}:')
+                    er = 48 *'!'
+                    print(f'{er}\nОшибка ввода данных пожалуйста введите правильные данные!\n{temp["error"]}:')
                 temp = self.chekInput(input(f'Введите {dataType[1]} тип данных {dataType[0]}: '), dataType)
                 print(temp)
                 flag = temp['flag']
@@ -122,14 +123,15 @@ class SRTDB(object):
                     return {'flag':True, 'error': 'Одно целое число (В фомате int)'}
                 return {'flag':False, 'error': None, 'value':int(result[0])}
             case 'date':
-                date  = re.findall(r'\d{4}-\d{2}-\d{2}', data)
+                date  = re.findall(r'\d{2}\.\d{2}\.\d{4}', data)
                 if date == None or len(date) == 0:
-                    return {'flag':True, 'error': 'В фомате ГГГГ-ММ-ДД'}
-                elif len(result) > 1:
-                    return {'flag':True, 'error': 'Одну дату в фомате ГГГГ-ММ-ДД'}
+                    return {'flag':True, 'error': 'В фомате ДД.ММ.ГГГГ'}
+                elif len(date) > 1:
+                    return {'flag':True, 'error': 'Одну дату в фомате ДД.ММ.ГГГГ'}
                 try:
-                    datetime.datetime.strptime(date[0], f'%Y-%m-%d')
-                    result = date[0]
+                    datetime.datetime.strptime(date[0], f'%d.%m.%Y')
+                    ld = date[0].split('.')
+                    result = f'{ld[2]}-{ld[1]}-{ld[0]}'
                 except Exception as e:
                     return {'flag':True, 'error': f'Не корректная дата. Введите коррекную дату.\nОшибка: {e}'}
                 return {'flag':False, 'error': None, 'value':result}
@@ -160,7 +162,7 @@ class SRTDB(object):
                 print('self.data[\'actual_date\']',self.data['actual_date'])
                 print('where', where)
                 exit(' def checkAndWriteToTheDB(self): не нашли в базе')
-            id = self.db.insert(self.nameTable,[list(self.data.keys()),[list(self.data.values()),]], test = True)
+            id = self.db.insert(self.nameTable,[list(self.data.keys()),[list(self.data.values()),]], test = self.test)
 
         return id
 
@@ -536,14 +538,14 @@ class SRTDB(object):
                     stopList.append(k)
             for k in stopList:
                 stepDict.pop(k)
-        id_contractor = self.db.selectCell('contractor', {'columns':['id'], 'where':[f'LOWER(`name`) = "{listText[1]}"'],'test':True})
+        id_contractor = self.db.selectCell('contractor', {'columns':['id'], 'where':[f'LOWER(`name`) = "{listText[1]}"']})
         if type(id_contractor) != int:
             print(f'\nСистема не нашла "{listText[0].upper()} {listText[1].upper()}" в базе данных. Введите, пожалуйста, необходимые данные.\n\n * - обязательны поля для заполнения.\n')
             name = listText[1]
             full_name = self.db.escapingQuotes(input('Введите, пожалуйста, полное название организации * (не более 128 символов): '))
             abbreviated_name = self.db.escapingQuotes(input('Введите, пожалуйста, сокращенное название организации (не более 50 символов): '))
             id_contractor = self.db.insert('contractor',[['name','full_name','abbreviated_name'], [[name, full_name, abbreviated_name]]], test = True)
-        resultDict['id_contractor'] = id_contractor
+        resultDict['company_id'] = id_contractor
         keyList = list(resultDict.keys())
         valueList = list(resultDict.values())
         return self.db.insert('people',[keyList, [valueList]], test = True)
@@ -551,7 +553,7 @@ class SRTDB(object):
     def replasement(self, text):
         gap = '-@#$-'
         replacement = {
-            'ао«дока':'ао дока', '«':'', '»':'','\n':' ', 'cк дока':'ск'+gap+'дока', 'ск ':'','-центр':'', '-инжиниринг':'', 'художественно-реставрационная группа ':'','нв билдинг':'нв'+gap+'билдинг','ук арт-глас':'арт-глас','"':'','новое время':'новое'+gap+'время','политех строй':'политехстрой', 'лепной двор':'лепной'+gap+'двор','ван строй':'ван'+gap+'строй','метеор лифт':'метеор'+gap+'лифт', 'янтарная прядь-паркет': 'янтарная'+gap+'прядь-паркет', 'пгс систем':'пгс'+gap+'систем', 'гранит тех':'гранит'+gap+'тех', 'дтм спб':'дтм'+gap+'спб','строй сити':'строй'+gap+'сити'
+            'ао«дока':'ао дока', '«':'', '»':'','\n':' ', 'cк дока':'ск'+gap+'дока', 'ск ':'','-центр':'', '-инжиниринг':'', 'художественно-реставрационная группа ':'','нв билдинг':'нв'+gap+'билдинг','ук арт-глас':'арт-глас','"':'','новое время':'новое'+gap+'время','политех строй':'политехстрой', 'лепной двор':'лепной'+gap+'двор','ван строй':'ван'+gap+'строй','метеор лифт':'метеор'+gap+'лифт', 'янтарная прядь-паркет': 'янтарная'+gap+'прядь-паркет', 'пгс систем':'пгс'+gap+'систем', 'гранит тех':'гранит'+gap+'тех', 'дтм спб':'дтм'+gap+'спб','строй сити':'строй'+gap+'сити','еаг инжиниринг':'еаг'+gap+'инжиниринг'
         }
         text = text.strip().lower()
         for key, value in replacement.items():
