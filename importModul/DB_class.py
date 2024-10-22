@@ -180,7 +180,7 @@ class DB(object):
             return result[0][columnName]
 
     # Обновить строку в таблице nameTable
-    def update(self, nameTable: str, data: dict, test = False):
+    def update(self, nameTable: str, data: dict):
         query = 'UPDATE `' + nameTable + '` SET '
         for i in data['data']:
             if i != 'where':
@@ -189,14 +189,13 @@ class DB(object):
         query = temp
         if 'where' in data:
             query += ' WHERE ' + self.where(data['where'])
-        if test:
+        if 'test' in list(data.keys()) and data['test']:
             print('Test DB.update(self, nameTable: str, data: dict, test = False):\n',query)
         with self.mydb.cursor() as cursor:
             cursor.execute(query)
             self.mydb.commit()
         cursor.close()
         return
-
 
     # WHERE список условий при пустом списке возвращает пустую строку, при 1 записи возвращает строку спервой записью
     # если несколько условий, то список состоит из списков, где 0 элемент - это AND, OR, а 1 элемент само условие

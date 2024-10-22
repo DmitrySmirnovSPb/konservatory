@@ -96,7 +96,7 @@ class SRTDB(object):
         if type(id) != int:
             exit('def getNumberID(self):')
         return id
-        
+
     def inputReport(self, number):
         listKeys = {'date':['date','Дата создания отчёта в фомате ДД.ММ.ГГГГ'], 'date_start':['date','Дата начала отчетного периода в фомате ДД.ММ.ГГГГ'], 'date_finish':['date','Дата окончания отчётного периода в фомате ДД.ММ.ГГГГ'], 'on_schedule':['int','Количество вызовов по графику'], 'off_schedule':['int','Количество вызовов вне графика'], 'not_presented':['int','Количество не предъявленых работ по графику'], 'not_accepted_for_various_reasons':['int','Количество вызовов не принятых по различным причинам по графику'], 'accepted_in_the_previous_period':['int','Количество ранее принятых работ'], 'accepted':['int','Количество принятых работ.']}
         dataInput = {'number':number}
@@ -287,7 +287,7 @@ class SRTDB(object):
                     result['journal'].append(self.removeDubleSpaces(x.replace('№', '')))
             if len(end) > 0 and end[0] == ',':
                 end = end[1:]
-            
+
             end = end.strip()
 
             result['end'] = end
@@ -483,25 +483,18 @@ class SRTDB(object):
 
     # Получить список ID людей и компаний    
     def getAMan(self):
-        # gap = '-@#$-'
-        # replacement = {
-        #     'ао«дока':'ао дока', '«':'', '»':'','\n':' ', 'cк дока':'ск'+gap+'дока', 'ск ':'','-центр':'', '-инжиниринг':'', 'художественно-реставрационная группа ':'','нв билдинг':'нв'+gap+'билдинг','ук арт-глас':'арт-глас','"':'','новое время':'новое'+gap+'время','политех строй':'политехстрой', 'лепной двор':'лепной'+gap+'двор','ван строй':'ван'+gap+'строй','метеор лифт':'метеор'+gap+'лифт', 'янтарная прядь-паркет': 'янтарная'+gap+'прядь-паркет', 'пгс систем':'пгс'+gap+'систем', 'гранит тех':'гранит'+gap+'тех'
-        # }
 
         for k in list(self.dictPeople.keys()):
             if self.data[k] != None:
                 flag = self.data[k]
                 temp = self.replasement(flag) # flag.strip().lower()
                 if k == 'id_CC_engineer':
-                    # temp = self.replasement(flag)
+
                     try:
                         self.data[k] = self.db.selectCell('people', {'columns':['id'], 'where': [' LOWER(`l_name`) = "' + temp[0] + '"']})
                     except Exception as e:
                         print('\t\tERROR!!!', e)
                 else:
-                    # for key, value in replacement.items():
-                    #     temp = temp.replace(key, value)
-                    # temp = temp.split()
                     try:
                         self.data[k] = self.db.selectCell('people', {'columns':['id'], 'where': [' LOWER(`l_name`) = "' + temp[2] + '"']})
                     except Exception as e:
