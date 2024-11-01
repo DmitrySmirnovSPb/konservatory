@@ -9,25 +9,35 @@ from excel_class import Excel
 class getContent(object):
 
     CONST_YEAR = 2014
-    CONST_LIST_TAB = ['chapter','estimate_number','notes','justification','name_of_works_and_materials','contractor','dimension']
+# Список таблиц в базе данных относящихся к смете
+    CONST_LIST_TAB = [
+        'chapter',                      # Таблица с названием разделов сметы
+        'estimate_number',              # Номер локальной сметы
+        'notes',                        # Примечания
+        'justification',                # Наименование обоснования расценки
+        'name_of_works_and_materials',  # Наименование работ и материалов
+        'contractor',                   # Список организаций
+        'dimension']                    # Таблица размерностей
+# Список полей в таблице basic_estimate -> Основная смета контракта
     CONST_KEYS = [
-        'id',
-        'chapter_id',
-        'number_in_order',
-        'estimate_id',
-        'estimate_number',
-        'justification_id',
-        'Year',
-        'notes',
-        'grey',
-        'name_id',
-        'contractor_id',
-        'dimension',
-        'value',
-        'cost',
-        'tbas',
-        'wpi',
-        'executive_documentation'
+        'id',                           # ID строки записи в таблице
+        'chapter_id',                   # ID расдела ссылнка на chapter.id
+        'number_in_order',              # Номер по порядку в смете контракта в формате JSON
+        'estimate_id',                  # ID номера сметы к которому привязана строчка сметы estimate_number.id
+        'estimate_number',              # Номер по порядку в смете указанной в пункте estimate_id
+        'justification_id',             # ID Обоснование расценки justification.id
+        'Year',                         # Год сметы к которому привязана строка сметы контракта. (2014, 2015,2021, 2022)
+        'notes',                        # ID Ссылка на ID в таблице notes notes.id
+        'color',                        # Цвет шрифта серый (FF7F7F7F). Черный (FF000000) По умолчанию - 000000
+        'name_id',                      # ID в таблице работ и материалов name_of_works_and_materials.id
+        'contractor_id',                # ID в таблице организаций (подрядчиков) contractor.id
+        'dimension',                    # ID единица измерения к строке сметы dimension.id
+        'value',                        # Количество в соответствии со сметой контракта
+        'cost',                         # Стоимость в соответствии со сметой контракта
+        'tbas',                         # Временные здания и сооружения – 1,44%.
+                                        #   По умолчанию - True (Temporary buildings and structures)
+        'wpi',                          # Зимнее удорожание - 1,41%. По умолчанию - True (Winter price increase)
+        'executive_documentation'       # ID в таблице исполнительной документации, по умолчанию NULL
     ]
 
     def __init__(self, link = '/data/предвар.xlsx', nameDB = 'polytechstroy', globalLink = False, Sheet = 'Лист1'):
@@ -43,7 +53,7 @@ class getContent(object):
     # Получть ID по названию раздела
     def getChapterID(self, i):
         where = '`name` = "' + re.sub(self.match, '', self.db.escapingQuotes(i) , flags=re.I) + '"'
-        result = self.db.select('chapter',{'columns':['id'],'where':[where]})
+        result = self.db.selectCell('chapter',{'columns':['id'],'where':[where]})
         return result if result != False else False
 
     # Опредиление максимального количество строк
@@ -121,8 +131,11 @@ class getContent(object):
     def isGrey(self, row:int):
         for i in self.Content[row]:
             if self.Content[row][i] != None:
-                if '7F7F7F' in str(self.ExcelObj.getFontColorCell(row, i)).upper(): return 1
-                else: return 0
+                color = str(self.ExcelObj.getFontColorCell(row, i)).upper()
+                if len(color) != 6:
+                    return color[1:5]
+                else:
+                    return color
     # Определяет формат числа в ячейке и возвращает число в формате JSON
     def getContentCellFormatNumber(self, r: int, c: int):
         formatNum = self.ExcelObj.getCellFormatNumber(r, c)
@@ -169,16 +182,17 @@ class getContent(object):
             'contractor':['name',None],
             'dimension':['name',None]
         }
+        print(f'get.py -> def getSelect(self, table: {table}, date: "{date}"')
         whereTemp = self.db.escapingQuotes(date if ListColumns[table][1] == None else self.getLS(date, ListColumns[table][1]))
         where = '`'+ListColumns[table][0]+'` = "' + whereTemp + '"'
-        result = self.db.select(table, {'where':[where], 'columns':['id']})
+        result = self.db.selectCell(table, {'where':[where], 'columns':['id']})
         if result != None: return result
         return self.db.insert(table, [[ListColumns[table][0]],[whereTemp]])
     
     def getDataDB(self, table, row, column):
         if column == 11 or column == 8: temp = self.Content[row][column]
         else: temp = str(self.Content[row][column]) if self.Content[row][column] != None else ''
-        if table == 'grey': return self.isGrey(row)
+        if table == 'color': return self.isGrey(row)
         elif table == 'number_in_order': return self.getContentCellFormatNumber(row,1)
         elif table == '': return temp
         return self.getSelect(table, temp)

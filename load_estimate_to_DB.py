@@ -3,90 +3,8 @@ sys.path.append(os.getcwd() + '/')
 
 from importModul.get import getContent
 
-showTables = {
-    'basic_estimate':
-    [
-        'id',
-        'chapter_id',
-        'number_in_order',
-        'estimate_id',
-        'estimate_number',
-        'justification_id',
-        'Year',
-        'notes',
-        'grey',
-        'name_id',
-        'contractor_id',
-        'dimension',
-        'value',
-        'cost',
-        'tbas',
-        'wpi',
-        'executive_documentation'
-    ],
-    'chapter':
-    [
-        'id',
-        'name',
-        'number'
-    ],
-    'contractor':
-    [
-        'id',
-        'name',
-        'full_name'
-    ],
-    'dimension':
-    [
-        'id',
-        'name',
-        'multiplicity'
-    ],
-    'estimate_number':
-    [
-        'id',
-        'estimate'
-    ],
-    'executive_documentation':
-    [
-        'id',
-        'id_contractor',
-        'val_number',
-        'name',
-        'passed',
-        'dttc',
-        'notes_id',
-        'note'
-    ],
-    'justification':
-    [
-        'id',
-        'position'
-    ],
-    'name_of_works_and_materials':
-    [
-        'id',
-        'name'
-    ],
-    'notes':
-    [
-        'id',
-        'note'
-    ],
-    'people':
-    [
-        'id',
-        'f_name',
-        'l_name',
-        'm_name',
-        'initials',
-        'position',
-        'email',
-        'phone_number',
-        'company_id'
-    ]
-}
 listTmp = ['chapter_id','notes','executive_documentation','Year','tbas', 'wpi']
+
 dataKey = {
     'contractor_id':['contractor',6],
     'dimension':['dimension',7],
@@ -96,23 +14,29 @@ dataKey = {
     'estimate_number':['',3],
     'value':['',8],
     'cost':['',11],
-    'grey':['grey',1],
+    'color':['',1],
     'number_in_order':['number_in_order',1]
 }
+
 if __name__ == '__main__':
 
     start_time = time.time()
 
-    gc = getContent()
+    gc = getContent( Sheet = 'Смета контракта Консерватория_1')
 
     dataTemp = dict()
+    showTables = dict()
+    
+    lstTable = [x[0] for x in gc.db.anyRequest('SHOW TABLES;')]
+    for table in lstTable:
+        showTables[table] = [x[0] for x in gc.db.anyRequest(f'SHOW COLUMNS FROM `{table}`;')]
 
     # print(gc.db.selec('people',{'columns':['*'],}))
     gc.db.clearTable('basic_estimate')
     dataTemp['chapter_id'] = 0
     dataTemp['notes'] = ''
     dataTemp['executive_documentation'] = None
-    dataTemp['year'] = gc.CONST_YEAR
+    dataTemp['Year'] = gc.CONST_YEAR
     indNotes = 0
 
     stopList = [
@@ -127,6 +51,7 @@ if __name__ == '__main__':
     ]
 
     for row in gc.Content:
+        print(f'\tROW {row}')
         # Пропускаем шапку смены. Тело начинается со строки 3
         if row < 3: continue
         # Пропуск строки в примечаниях
@@ -135,8 +60,8 @@ if __name__ == '__main__':
         if stopList.count(gc.Content[row][5]) > 0: continue
         # Получаем id раздела
         elif 'Раздел' in str(gc.Content[row][1]):
-            dataTemp['Year'] = gc.CONST_YEAR
-            dataTemp['notes'] = ''
+            # dataTemp['Year'] = gc.CONST_YEAR
+            # dataTemp['notes'] = ''
             dataTemp['chapter_id'] = gc.getChapterID(gc.Content[row][1])
             continue
         # Фиксируем год к которму относится строки сметы
