@@ -31,7 +31,8 @@ if __name__ == '__main__':
     for table in lstTable:
         showTables[table] = [x[0] for x in gc.db.anyRequest(f'SHOW COLUMNS FROM `{table}`;')]
 
-    # print(gc.db.selec('people',{'columns':['*'],}))
+    # print(gc.db.selectAll('people',{'columns':['*'],}))
+    # exit()
     gc.db.clearTable('basic_estimate')
     dataTemp['chapter_id'] = 0
     dataTemp['notes'] = ''

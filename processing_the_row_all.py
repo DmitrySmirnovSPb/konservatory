@@ -51,7 +51,7 @@ if __name__ == '__main__':
     }
 
     for row in ccav.Content:
-        if row < 5: continue #5  16276
+        if row < 19850: continue #5  16276
         # if row > 35: break
 #  Объявление словаря для строки, занесение значений из строки файла по адресу link
         data = {}

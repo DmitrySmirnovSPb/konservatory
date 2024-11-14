@@ -1,4 +1,4 @@
-import json, time, re, datetime
+import json, time, re, datetime, inspect
 from DB_class import DB
 
 class SRTDB(object):
@@ -8,7 +8,7 @@ class SRTDB(object):
     dictPeople = {'id_contractor':'Представитель подрядчика', 'id_actual_contractor':'Представитель исполнителя работ', 'id_CC_engineer':'Инженер строительного контроля'}
 
     counter = 0
-    test = False
+    test = True
 
     axesMatList = [
         r'[А-Яа-яABCEHKMOPTX]_?Н?\s?-\s?[А-Яа-яABCEHKMOPTX]_?Н?\s?[\\/_]\s?\d{1,2}\s?-\s?\d{1,2}',
@@ -177,8 +177,8 @@ class SRTDB(object):
                     tempLst.append(i)
         result = self.clearAxes(tempLst)
         temp = []
-        if len(result) == 0: pass
-            # result = self.inputAxes()
+        if len(result) == 0:
+            result = self.inputAxes()
         if len(result) > 0:
             for i in result:
                 temp.append(self.sortAxes(i.split('/')))
@@ -421,7 +421,7 @@ class SRTDB(object):
         return json.dumps(tempFloor)
 
     def getNameID(self):
-        delDict = {r'\s+:': '', r'\.{2,}':'.', r'(;\s?){2,}': ';', r'(№,\s?){1,}': '', r'(\s?;){1}': ';'}
+        delDict = {r'\s+:': '', r'\.{2,}':'.', r'(;\s?){2,}': ';', r'(№,\s?){1,}': '', r'(\s?;){1}': ';',r'\b"':"«", r'"\b':'»'}
         text = self.temp
         for key, val in delDict.items():
             text = re.sub(key, val, text)
@@ -430,7 +430,8 @@ class SRTDB(object):
         if id == None:
             if self.test:
                 print(self.db.selectCell('name_of_works_and_materials', {'columns':['id'],'where':[f'`name` = "{text}"'],'test':True}))
-                exit('def getNameID(self):')
+                message = 'def getNameID(self): стока ' + str(inspect.currentframe().f_lineno)
+                exit(message)
             id = self.db.insert('name_of_works_and_materials',[['name'],[[text]]])
         return id
 
@@ -488,30 +489,29 @@ class SRTDB(object):
             if self.data[k] != None:
                 flag = self.data[k]
                 temp = self.replasement(flag) # flag.strip().lower()
+                try:
+                    self.data[k] = self.db.selectCell('people', {'columns':['id'], 'where': [' LOWER(`l_name`) = "' + temp[0] + '"']})
+                except Exception as e:
+                    print('\t\tERROR!!!', e)
                 if k == 'id_CC_engineer':
-
-                    try:
-                        self.data[k] = self.db.selectCell('people', {'columns':['id'], 'where': [' LOWER(`l_name`) = "' + temp[0] + '"']})
-                    except Exception as e:
-                        print('\t\tERROR!!!', e)
-                else:
-                    try:
-                        self.data[k] = self.db.selectCell('people', {'columns':['id'], 'where': [' LOWER(`l_name`) = "' + temp[2] + '"']})
-                    except Exception as e:
-                        print('\t\tERROR!!!', e)
-                    key = k + '_company'
+                    continue
+                key = k + '_company'
+                if self.data[k] != None:
                     try:
                         self.data[key] = self.db.selectCell('contractor', {'columns':['id'], 'where': [' LOWER(`name`) = "' + temp[1] + '"']}) # .replace(gap, ' ')
                     except Exception as e:
                         print('\t\tERROR!!!', e)
-                    if self.data[k] == None:
-                        self.data[key] = self.inputPeople(k, temp, key)
-                        # exit('getAMan(self) -> inputPeople(self, key, text)')
+                if self.data[key] != None:
+                    continue
+                tmp = self.inputPeople(k, temp)
+                self.data[k] = tmp[0]
+                self.data[key] = tmp[1]
+                # exit('getAMan(self) -> inputPeople(self, key, text)')
 
-    def inputPeople(self, key, listText, KEY):
+    def inputPeople(self, key, listText):
         text = ' '.join(listText)
         print(f'self.data[\'{key}\'] == None:........', text )
-        print(f'KEY ==>  {KEY}\nСистема не нашла "{text}" в базе данных. Введите, пожалуйста, необходимые данные.\n\n * - обязательны поля для заполнения.\n')
+        print(f'Система не нашла "{text}" в базе данных. Введите, пожалуйста, необходимые данные.\n\n * - обязательны поля для заполнения.\n')
         stepDict = {'f_name':['имя',32],
             'l_name':['фамилию *',32],
             'm_name':['отчество',32],
@@ -531,22 +531,23 @@ class SRTDB(object):
                     stopList.append(k)
             for k in stopList:
                 stepDict.pop(k)
-        id_contractor = self.db.selectCell('contractor', {'columns':['id'], 'where':[f'LOWER(`name`) = "{listText[1]}"']})
+        id_contractor = self.db.selectCell('contractor', {'columns':['id'], 'where':[f'LOWER(`name`) = "{listText[1]}"'], 'test':self.test})
         if type(id_contractor) != int:
             print(f'\nСистема не нашла "{listText[0].upper()} {listText[1].upper()}" в базе данных. Введите, пожалуйста, необходимые данные.\n\n * - обязательны поля для заполнения.\n')
             name = listText[1]
             full_name = self.db.escapingQuotes(input('Введите, пожалуйста, полное название организации * (не более 128 символов): '))
             abbreviated_name = self.db.escapingQuotes(input('Введите, пожалуйста, сокращенное название организации (не более 50 символов): '))
-            id_contractor = self.db.insert('contractor',[['name','full_name','abbreviated_name'], [[name, full_name, abbreviated_name]]], test = True)
+            id_contractor = self.db.insert('contractor',[['name','full_name','abbreviated_name'], [[name, full_name, abbreviated_name]]], test = self.test)
         resultDict['company_id'] = id_contractor
         keyList = list(resultDict.keys())
         valueList = list(resultDict.values())
-        return self.db.insert('people',[keyList, [valueList]], test = True)
+        peopleID = self.db.insert('people',[keyList, [valueList]], test = self.test)
+        return [peopleID, id_contractor]
 
     def replasement(self, text):
         gap = '-@#$-'
         replacement = {
-            'ао«дока':'ао дока', '«':'', '»':'','\n':' ', 'cк дока':'ск'+gap+'дока', 'ск ':'','-центр':'', '-инжиниринг':'', 'художественно-реставрационная группа ':'','нв билдинг':'нв'+gap+'билдинг','ук арт-глас':'арт-глас','"':'','новое время':'новое'+gap+'время','политех строй':'политехстрой', 'лепной двор':'лепной'+gap+'двор','ван строй':'ван'+gap+'строй','метеор лифт':'метеор'+gap+'лифт', 'янтарная прядь-паркет': 'янтарная'+gap+'прядь-паркет', 'пгс систем':'пгс'+gap+'систем', 'гранит тех':'гранит'+gap+'тех', 'дтм спб':'дтм'+gap+'спб','строй сити':'строй'+gap+'сити','еаг инжиниринг':'еаг'+gap+'инжиниринг'
+            'ао«дока':'ао'+gap+'дока', '«':'', '»':'','\n':' ', 'cк дока':'ск'+gap+'дока', 'ск ':'','-центр':'', '-инжиниринг':'', 'художественно-реставрационная группа ':'','нв билдинг':'нв'+gap+'билдинг','ук арт-глас':'арт-глас','"':'','новое время':'новое'+gap+'время','политех строй':'политехстрой', 'лепной двор':'лепной'+gap+'двор','ван строй':'ван'+gap+'строй','метеор лифт':'метеор'+gap+'лифт', 'янтарная прядь-паркет': 'яп-паркет', 'пгс систем':'пгс'+gap+'систем', 'гранит тех':'гранит'+gap+'тех', 'дтм спб':'дтм'+gap+'спб','строй сити':'строй'+gap+'сити','еаг инжиниринг':'еаг'+gap+'инжиниринг', 'к энд р дизайн':'к'+gap+'энд'+gap+'р'+gap+'дизайн','политехстрой-сварго':'политехстрой'
         }
         text = text.strip().lower()
         for key, value in replacement.items():
