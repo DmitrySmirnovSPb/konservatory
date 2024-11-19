@@ -50,7 +50,6 @@ class SRTDB(object):
         if 'dimension' in self.data:
             self.getDimension()
         self.processTheNameColumn()
-        self.getAMan()
         self.getCode()
         self.checkAndWriteToTheDB()
         # exit(1)
@@ -154,6 +153,7 @@ class SRTDB(object):
         #                                       - id Названия работы или материала.
 
         id = self.db.selectCell(self.nameTable,{'columns':['id'],'where':where})
+        self.getAMan()
 
         if id == None :                         # Если запись отсутствует, заносится новая звпись
             if self.test:
@@ -161,10 +161,22 @@ class SRTDB(object):
                 print('self.data[\'date_of_the_call\']',self.data['date_of_the_call'])
                 print('self.data[\'actual_date\']',self.data['actual_date'])
                 print('where', where)
-                exit(' def checkAndWriteToTheDB(self): не нашли в базе')
+                # exit(' def checkAndWriteToTheDB(self): не нашли в базе')
+            self.bringingTheDataToTheCorrectFormat()
             id = self.db.insert(self.nameTable,[list(self.data.keys()),[list(self.data.values()),]], test = self.test)
 
         return id
+    def bringingTheDataToTheCorrectFormat(self):
+        print('\t======= def bringingTheDataToTheCorrectFormat =======')
+        for key, value in self.data.items():
+            if type(value) == datetime.datetime:
+                self.data[key] = str(value)[:10]
+            elif type(value) == bool:
+                self.data[key] = str(value).upper()
+            elif value == None:
+                self.data[key] = 'NULL'
+            print('{:30}\t=>\t{}'.format(key, self.data[key]))
+
 
     def getAxes(self):
         result = []
@@ -507,6 +519,8 @@ class SRTDB(object):
                 self.data[k] = tmp[0]
                 self.data[key] = tmp[1]
                 # exit('getAMan(self) -> inputPeople(self, key, text)')
+        self.printField()
+        exit()
 
     def inputPeople(self, key, listText):
         text = ' '.join(listText)
