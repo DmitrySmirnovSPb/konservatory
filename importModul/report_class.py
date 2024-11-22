@@ -58,7 +58,7 @@ class Report(object):
             print('mysql.connector.errors.IntegrityError')
             for field in self.filds:
                 print(field, '-->',getattr(self, field))
-            exit()
+            exit("class Report:makingAnEntry()")
         return id
     
     def update(self, id:int):               # Изменение записи с ID = id в базе данных

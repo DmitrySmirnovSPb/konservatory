@@ -12,9 +12,10 @@ if __name__ == '__main__':
     link = 'Сводный отчет СК по вызову стройконтроля.xlsx'
     tableName = 'сс_accepted_volumes'
     Sheet = 'отчёт'
-    
+
     ccav = getContent(link = link, globalLink = globalLink, Sheet = Sheet)
     db = DB()
+
     # Очистка таблицы сс_accepted_volumes
     # db.clearTable('сс_accepted_volumes')
     #######################################       Список полей dictField      ###########################################
@@ -47,19 +48,17 @@ if __name__ == '__main__':
     #####################################################################################################################
 
     dictField = {
-        'in_the_chart':5,'call_Customer':1,'number_the_Customer':2,'number_in_b_estimate':3,'number':4, 'number_in_order':6,'name_id':7,'dimension':8,'value':9,'code':10,'date_of_the_call':11,'actual_date':12,'id_contractor':13,'id_contractor_company':13,'id_actual_contractor':14,'id_actual_contractor_company':14,'id_CC_engineer':17,'result':15,'axes':7,'room':7,'floor':7,'note':15
+        'call_Customer':1,'number_the_Customer':2,'number_in_b_estimate':3,'number':4, 'number_in_order':6,'name_id':7,'dimension':8,'value':9,'code':10,'date_of_the_call':11,'actual_date':12,'id_contractor':13,'id_contractor_company':13,'id_actual_contractor':14,'id_actual_contractor_company':14,'id_CC_engineer':17,'result':15,'axes':7,'room':7,'floor':7,'note':15
     }
 
     for row in ccav.Content:
         if row < 5: continue #5  16276
         # if row > 35: break
-#  Объявление словаря для строки, занесение значений из строки файла по адресу link
+# Объявление словаря для строки, занесение значений из строки файла по адресу link
         data = {}
         for key, column in dictField.items():
-            if key == 'in_the_chart':
-                data[key] = True if ccav.Content[row][column] == '+' else False
-            else:
-                data[key] = ccav.Content[row][column]
+            data[key] = ccav.Content[row][column]
+        data['in_the_chart'] = True if ccav.Content[row][5] == '+' else False
 
         print(row)
 

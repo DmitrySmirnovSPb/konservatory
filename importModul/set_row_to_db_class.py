@@ -39,9 +39,10 @@ class SRTDB(object):
             else:
                 error.append(field)
         return error
+
     # Инициация полученных данных, валидация
     def dataInitiation(self, dictFields):
-        self.setFields(dictFields)
+        errors = self.setFields(dictFields)
 
         if 'actual_date' in self.data and type(self.data['actual_date']) == str:
             self.data['actual_date'] = None
@@ -154,6 +155,8 @@ class SRTDB(object):
 
         id = self.db.selectCell(self.nameTable,{'columns':['id'],'where':where})
         self.getAMan()
+        # self.printField()
+        # exit('class SRTDB: checkAndWriteToTheDB()')
 
         if id == None :                         # Если запись отсутствует, заносится новая звпись
             if self.test:
@@ -171,11 +174,11 @@ class SRTDB(object):
         for key, value in self.data.items():
             if type(value) == datetime.datetime:
                 self.data[key] = str(value)[:10]
-            elif type(value) == bool:
-                self.data[key] = str(value).upper()
-            elif value == None:
-                self.data[key] = 'NULL'
-            print('{:30}\t=>\t{}'.format(key, self.data[key]))
+            # elif type(value) == bool:
+            #     self.data[key] = str(value).upper()
+            # elif value == None:
+            #     self.data[key] = 'NULL'
+            # print('{:30}\t=>\t{}'.format(key, self.data[key]))
 
 
     def getAxes(self):
@@ -190,7 +193,7 @@ class SRTDB(object):
         result = self.clearAxes(tempLst)
         temp = []
         if len(result) == 0:
-            result = self.inputAxes()
+            temp = self.inputAxes()
         if len(result) > 0:
             for i in result:
                 temp.append(self.sortAxes(i.split('/')))
@@ -204,11 +207,9 @@ class SRTDB(object):
         print('\nВведите оси из ниже предоставленной записи в формате Ч-Ч/Б-Б, где Ч - это число от 1 до 37, Б - это буква от А до Я, включая М/Н\n\tЕсли осей несколько введите их последовательно разделяя знаком ";"')
         print(self.temp)
         inp = input('Введите значение: ')
-        if inp == '':
-            result = []
-        else:
+        result = []
+        if inp != '':
             inp = inp.upper()
-            result = []
             f = self.removeSpaces(inp).split(';')
             for i in f:
                 i = re.sub(r'[МM]+/[HН]+','М_Н',i.replace('\\','/'))
@@ -254,7 +255,7 @@ class SRTDB(object):
                 except Exception as e:
                     print('\n\t\t\tERROR!\ndef sortAxes\n',e,f'\n{slst}\n')
                     self.printField()
-                    exit(1)
+                    exit("sortAxes(self, lst:list) 256")
                 if boolean:
                     slst[0], slst[1] = slst[1], slst[0]
                 result.append(slst)
@@ -499,10 +500,14 @@ class SRTDB(object):
 
         for k in list(self.dictPeople.keys()):
             if self.data[k] != None:
-                flag = self.data[k]
-                temp = self.replasement(flag) # flag.strip().lower()
+                flag = self.data[k].strip().lower()
+                temp = self.replasement(flag)
+                if k == 'id_CC_engineer':
+                    tmp = self.replasement(flag)[0]
+                else:
+                    tmp = self.replasement(flag)[2]
                 try:
-                    self.data[k] = self.db.selectCell('people', {'columns':['id'], 'where': [' LOWER(`l_name`) = "' + temp[0] + '"']})
+                    self.data[k] = self.db.selectCell('people', {'columns':['id'], 'where': [' LOWER(`l_name`) = "' + tmp + '"']})
                 except Exception as e:
                     print('\t\tERROR!!!', e)
                 if k == 'id_CC_engineer':
@@ -519,8 +524,8 @@ class SRTDB(object):
                 self.data[k] = tmp[0]
                 self.data[key] = tmp[1]
                 # exit('getAMan(self) -> inputPeople(self, key, text)')
-        self.printField()
-        exit()
+        # self.printField()
+        # exit("getAMan(self):")
 
     def inputPeople(self, key, listText):
         text = ' '.join(listText)
