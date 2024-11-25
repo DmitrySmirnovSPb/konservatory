@@ -5,6 +5,10 @@ class SRTDB(object):
 
     data = {}
 
+    zone_list = [
+        r'\b[Рр]убинштейн', r'\b[Гг]лазунов', r'захватка', r'[Гг]линки', r'[Пп]ечатников', r'[Дд]екабристов', r'[Тт]еатральный', r'\b[Лл]-?\d{,2}\b'
+    ]
+
     dictPeople = {'id_contractor':'Представитель подрядчика', 'id_actual_contractor':'Представитель исполнителя работ', 'id_CC_engineer':'Инженер строительного контроля'}
 
     counter = 0
@@ -50,8 +54,6 @@ class SRTDB(object):
             self.getResult()
         if 'dimension' in self.data:
             self.getDimension()
-        self.processTheNameColumn()
-        self.getCode()
         self.checkAndWriteToTheDB()
         # exit(1)
 
@@ -139,7 +141,7 @@ class SRTDB(object):
                 return {'flag':True, 'error': f'Не нашли тип {dataType[0]}'}
 
     def checkAndWriteToTheDB(self):
-        listKeys = ['in_the_chart', 'number', 'number_in_order', 'name_id']
+        listKeys = ['in_the_chart', 'number', 'number_in_order']    # , 'name_id'
         self.data['number'] = self.getNumberID()
         if self.data['date_of_the_call'] != None:
             listKeys.append('date_of_the_call')
@@ -159,6 +161,8 @@ class SRTDB(object):
         # exit('class SRTDB: checkAndWriteToTheDB()')
 
         if id == None :                         # Если запись отсутствует, заносится новая звпись
+            self.processTheNameColumn()
+            self.getCode()
             if self.test:
                 print(self.db.selectCell(self.nameTable,{'columns':['id'],'where':where, 'test': True}))
                 print('self.data[\'date_of_the_call\']',self.data['date_of_the_call'])
@@ -193,7 +197,7 @@ class SRTDB(object):
         result = self.clearAxes(tempLst)
         temp = []
         if len(result) == 0:
-            temp = self.inputAxes()
+            result = self.clearAxes(self.inputAxes())
         if len(result) > 0:
             for i in result:
                 temp.append(self.sortAxes(i.split('/')))
