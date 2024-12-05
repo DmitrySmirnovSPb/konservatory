@@ -53,7 +53,7 @@ class Report(object):
         id = False
         try:
             id = self.db.insert(self.table, [list(self.data.keys()),[list(self.data.values())]])
-            print(id)
+            print('Report class -> makingAnEntry:',id)
         except:
             print('mysql.connector.errors.IntegrityError')
             for field in self.filds:

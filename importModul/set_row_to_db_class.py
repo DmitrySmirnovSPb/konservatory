@@ -24,7 +24,8 @@ class SRTDB(object):
         r'\d{1,2}\s?-\s?\d{1,2}\s?[\\/_]\s?[А-Яа-яABCEHKMOPTX]_?Н?',
         r'\d{1,2}\s?[\\/_]\s?[А-Яа-яABCEHKMOPTX]_?Н?'
     ]
-
+    
+    axesMatSM = r'\d{1,2}-?\d{,2}\s?[/\\]\s?[А-Яа-яABCEHKMOPTX]/?Н?-?[А-Яа-яABCEHKMOPTX]?/?Н?'
     axesMat =  r'[\s,(]\d{,2}\s?-?\s?\d{1,2}\s?[\\/и]\s?[А-Яа-яA-Z]+[_\/]?Н?\s?-?\s?[А-Яа-яA-Z]?[_\/]?Н?|[ ,(]\d{,2}\s?-?\s?\d{1,2}\s?[\\/и]\s?[А-Яа-яA-Z]?[_\/]?Н?\s?-?\s?[А-Яа-яA-Z][_\/]?Н?$|[ ,(][А-Яа-яA-Z]{1}[_\/]?Н?\s?-?\s?[А-Яа-яA-Z]{0,1}[_\/]?Н?\s?[\\/и]\s?\d{,2}\s?-?\s?\d{1,2}|[ ,(][А-Яа-яA-Z]{1}[_\/]?Н?\s?-?\s?[А-Яа-яA-Z]{0,1}[_\/]?Н?\s?[\\/и]\s?\d{,2}\s?-?\s?\d{1,2}$'
 
     def __init__(self, nameTable : str, db: DB):
@@ -196,9 +197,12 @@ class SRTDB(object):
                     tempLst.append(i)
         result = self.clearAxes(tempLst)
         temp = []
-        if len(result) == 0:
+        if len(result) == 0:            # Если не нашли оси можно ввести оси вручную
+            print('getAxes -> len(result) == 0')
             result = self.clearAxes(self.inputAxes())
+            # pass
         if len(result) > 0:
+            print('getAxes -> len(result) > 0')
             for i in result:
                 temp.append(self.sortAxes(i.split('/')))
         dlt = self.axesMatList + [r'в\s?/\s?о', 'в осях', r',{2,}', r'\s[.;,]',r'[.;,]{2,}' , 'между осями']
@@ -208,9 +212,21 @@ class SRTDB(object):
         return temp
 
     def inputAxes(self):
-        print('\nВведите оси из ниже предоставленной записи в формате Ч-Ч/Б-Б, где Ч - это число от 1 до 37, Б - это буква от А до Я, включая М/Н\n\tЕсли осей несколько введите их последовательно разделяя знаком ";"')
         print(self.temp)
-        inp = input('Введите значение: ')
+        inp = None
+        zone_list = self.db.selectAll('map',{'columns':['zone'],'test':True})
+        for key in self.zone_list:
+            temp = re.findall(key, self.temp)
+            if len(temp) > 0:
+                for axe in temp:
+                    inp = self.db.selectCell('map',{'where':[f'`zone` = "{axe}"'], 'columns':['axes'], 'test':True})
+                    if type(inp) == str:
+                        print(f'Нашли оси: {inp}')
+                    else:
+                        self.checkInpitAxes(axe)
+                break
+        if inp == None:
+            inp = input('Введите значение: ')
         result = []
         if inp != '':
             inp = inp.upper()
@@ -218,6 +234,45 @@ class SRTDB(object):
             for i in f:
                 i = re.sub(r'[МM]+/[HН]+','М_Н',i.replace('\\','/'))
                 result.append(i)
+        return result
+
+    def checkInpitAxes(self, axe):
+        
+        flag = True
+        print('\nВведите оси из ниже предоставленной записи в формате Ч-Ч/Б-Б, где Ч - это число от 1 до 37, Б - это буква от А до Я иди М/Н\n\tЕсли осей несколько введите их последовательно разделяя знаком ";"')
+        error = 'Введите'
+        please = '\nПожалуйста, снова введите данные.'
+        while flag:
+            count = input(f'{error} количество вводимых записей: ')
+            try:
+                count = int(count) if count != '' else 0
+                if count > 50 or count < 0:
+                    error = 'Количество должно быть в диапазоне от 0 до 50 шт.' + please
+                else:
+                    count += 1
+                    flag = False
+            except:
+                error = 'Не удалось определить количество вводимых записей.' + please
+        errorStr = ''
+        result = []
+        for i in range(1, count):
+            textInput = input(f'\n{errorStr}Введите через точку с запятой (;) значение зоны {i} (если не соответствует {axe}) и обозначение осей: ')
+            if textInput == '':
+                break
+            if ';' in textInput:
+                dataInput = textInput.split(';')
+                zoneData = dataInput[0]
+                axeData = dataInput[1].upper()
+            else:
+                axeData = textInput.upper()
+                zoneData = axe
+            id_Axes = self.db.insert('map',[['zone','axes'],[[zoneData,axeData]]])
+            if type(id_Axes) == int:
+                print(f'Оси {axe} внесены в базу данных id = {id_Axes}')
+                result.append(self.sortAxes(axeData.replace('М/Н','М_Н').split('/')))
+            else:
+                print(f'Оси {axeData} зоны «{zoneData}» не удалось внести в базу данных.')
+
         return result
 
     def clearAxes(self, lst: list):
@@ -259,7 +314,7 @@ class SRTDB(object):
                 except Exception as e:
                     print('\n\t\t\tERROR!\ndef sortAxes\n',e,f'\n{slst}\n')
                     self.printField()
-                    exit("sortAxes(self, lst:list) 256")
+                    exit("sortAxes(self, lst:list)")
                 if boolean:
                     slst[0], slst[1] = slst[1], slst[0]
                 result.append(slst)
@@ -395,8 +450,9 @@ class SRTDB(object):
         self.data['code'] = json.dumps(temp)
 
     def getRoom(self):
-
-        mach = r'(\b\d{1}[.,]{1}\d{1}[.,]{1}\d{2}\w?)+'
+        # "\b[0-6]\.[1-3]\.[0-9]{,2}\b"gu
+        #mach = r'(\b\d{1}[.,]{1}\d{1}[.,]{1}\d{2}\w?)+'
+        mach = r'\b[0-6][.,][1-3][.,]\d{,2}\w?'
         lst = re.findall(mach, self.temp)
         dltList =[mach,r'пом\.\s?,*']
         for dlt in dltList:

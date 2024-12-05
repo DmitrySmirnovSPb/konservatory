@@ -64,7 +64,7 @@ if __name__ == '__main__':
             check = False
 
             if idReport != False:
-                temp =gc.db.selectAll('сс_accepted_volumes',{'columns':['id'], 'where':['`number` = ' + str(idReport)]})
+                temp =gc.db.selectAll('cc_accepted_volumes',{'columns':['id'], 'where':['`number` = ' + str(idReport)]})
                 print("set DB", temp[0])
 
                 if temp[0] != None:

@@ -10,14 +10,14 @@ if __name__ == '__main__':
 
     globalLink = '\\\\srv-fs-02.stroy.local\\Shares\\Консерватория\\21. Строительный контроль\\Еженедельные отчеты\\'
     link = 'Сводный отчет СК по вызову стройконтроля.xlsx'
-    tableName = 'сс_accepted_volumes'
+    tableName = 'cc_accepted_volumes'
     Sheet = 'отчёт'
 
     ccav = getContent(link = link, globalLink = globalLink, Sheet = Sheet)
     db = DB()
 
-    # Очистка таблицы сс_accepted_volumes
-    # db.clearTable('сс_accepted_volumes')
+    # Очистка таблицы cc_accepted_volumes
+    # db.clearTable('cc_accepted_volumes')
     #######################################       Список полей dictField      ###########################################
     # in_the_chart                  В графике вызова Заказчика или нет                                                  #
     # call_Customer                 Номер заявки вызова заказчика                                                       #
