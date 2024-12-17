@@ -12,7 +12,6 @@ class SRTDB(object):
     dictPeople = {'id_contractor':'Представитель подрядчика', 'id_actual_contractor':'Представитель исполнителя работ', 'id_CC_engineer':'Инженер строительного контроля'}
 
     counter = 0
-    test = True
 
     axesMatList = [
         r'[А-Яа-яABCEHKMOPTX]_?Н?\s?-\s?[А-Яа-яABCEHKMOPTX]_?Н?\s?[\\/_]\s?\d{1,2}\s?-\s?\d{1,2}',
@@ -28,9 +27,10 @@ class SRTDB(object):
     axesMatSM = r'\d{1,2}-?\d{,2}\s?[/\\]\s?[А-Яа-яABCEHKMOPTX]/?Н?-?[А-Яа-яABCEHKMOPTX]?/?Н?'
     axesMat =  r'[\s,(]\d{,2}\s?-?\s?\d{1,2}\s?[\\/и]\s?[А-Яа-яA-Z]+[_\/]?Н?\s?-?\s?[А-Яа-яA-Z]?[_\/]?Н?|[ ,(]\d{,2}\s?-?\s?\d{1,2}\s?[\\/и]\s?[А-Яа-яA-Z]?[_\/]?Н?\s?-?\s?[А-Яа-яA-Z][_\/]?Н?$|[ ,(][А-Яа-яA-Z]{1}[_\/]?Н?\s?-?\s?[А-Яа-яA-Z]{0,1}[_\/]?Н?\s?[\\/и]\s?\d{,2}\s?-?\s?\d{1,2}|[ ,(][А-Яа-яA-Z]{1}[_\/]?Н?\s?-?\s?[А-Яа-яA-Z]{0,1}[_\/]?Н?\s?[\\/и]\s?\d{,2}\s?-?\s?\d{1,2}$'
 
-    def __init__(self, nameTable : str, db: DB):
-        self.db = db
+    def __init__(self, nameTable : str, db: DB, test = False):
         self.nameTable = nameTable
+        self.db = db
+        self.test = test
         self.listfields = self.getFields()
         # self.checkAndWriteToTheDB()
         # for field in self.listfields:
@@ -48,7 +48,7 @@ class SRTDB(object):
     # Инициация полученных данных, валидация
     def dataInitiation(self, dictFields):
         errors = self.setFields(dictFields)
-
+        
         if 'actual_date' in self.data and type(self.data['actual_date']) == str:
             self.data['actual_date'] = None
         if 'result' in self.data:
@@ -226,7 +226,7 @@ class SRTDB(object):
                         self.checkInpitAxes(axe)
                 break
         if inp == None:
-            inp = input('Введите значение: ')
+            inp = input('Введите обозначене осей: ')
         result = []
         if inp != '':
             inp = inp.upper()

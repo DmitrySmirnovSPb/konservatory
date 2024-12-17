@@ -13,8 +13,15 @@ if __name__ == '__main__':
     tableName = 'cc_accepted_volumes'
     Sheet = 'отчёт'
 
+    if input('Учитываем ошибки или нет? (Y - учитываем, всё прочее - нет)').upper() == 'Y':
+        test = True
+    else:
+        test = False
+
     ccav = getContent(link = link, globalLink = globalLink, Sheet = Sheet)
     db = DB()
+
+    srtdb = SRTDB(tableName, db, test)
 
     # Очистка таблицы cc_accepted_volumes
     # db.clearTable('cc_accepted_volumes')
@@ -61,8 +68,6 @@ if __name__ == '__main__':
         for key, column in dictField.items():
             data[key] = ccav.Content[row][column]
         data['in_the_chart'] = True if ccav.Content[row][5] == '+' else False
-
-        srtdb = SRTDB(tableName, db)
 
         srtdb.dataInitiation(data)
 
