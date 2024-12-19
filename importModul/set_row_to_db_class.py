@@ -4,10 +4,11 @@ from DB_class import DB
 class SRTDB(object):
 
     data = {}
+    r = '=' * 9
 
-    zone_list = [
-        r'\b[Рр]убинштейн', r'\b[Гг]лазунов', r'захватка', r'[Гг]линки', r'[Пп]ечатников', r'[Дд]екабристов', r'[Тт]еатральный', r'\b[Лл]-?\d{,2}\b'
-    ]
+    zone_list = []
+    #     r'\b[Рр]убинштейн', r'\b[Гг]лазунов', r'захватка', r'[Гг]линки', r'[Пп]ечатников', r'[Дд]екабристов', r'[Тт]еатральный', r'\b[Лл]-?\d{,2}\b'
+    # ]
 
     dictPeople = {'id_contractor':'Представитель подрядчика', 'id_actual_contractor':'Представитель исполнителя работ', 'id_CC_engineer':'Инженер строительного контроля'}
 
@@ -24,8 +25,8 @@ class SRTDB(object):
         r'\d{1,2}\s?[\\/_]\s?[А-Яа-яABCEHKMOPTX]_?Н?'
     ]
     
-    axesMatSM = r'\d{1,2}-?\d{,2}\s?[/\\]\s?[А-Яа-яABCEHKMOPTX]/?Н?-?[А-Яа-яABCEHKMOPTX]?/?Н?'
-    axesMat =  r'[\s,(]\d{,2}\s?-?\s?\d{1,2}\s?[\\/и]\s?[А-Яа-яA-Z]+[_\/]?Н?\s?-?\s?[А-Яа-яA-Z]?[_\/]?Н?|[ ,(]\d{,2}\s?-?\s?\d{1,2}\s?[\\/и]\s?[А-Яа-яA-Z]?[_\/]?Н?\s?-?\s?[А-Яа-яA-Z][_\/]?Н?$|[ ,(][А-Яа-яA-Z]{1}[_\/]?Н?\s?-?\s?[А-Яа-яA-Z]{0,1}[_\/]?Н?\s?[\\/и]\s?\d{,2}\s?-?\s?\d{1,2}|[ ,(][А-Яа-яA-Z]{1}[_\/]?Н?\s?-?\s?[А-Яа-яA-Z]{0,1}[_\/]?Н?\s?[\\/и]\s?\d{,2}\s?-?\s?\d{1,2}$'
+    # axesMatSM = r'\d{1,2}-?\d{,2}\s?[/\\]\s?[А-Яа-яABCEHKMOPTX]/?Н?-?[А-Яа-яABCEHKMOPTX]?/?Н?'
+    # axesMat =  r'[\s,(]\d{,2}\s?-?\s?\d{1,2}\s?[\\/и]\s?[А-Яа-яA-Z]+[_\/]?Н?\s?-?\s?[А-Яа-яA-Z]?[_\/]?Н?|[ ,(]\d{,2}\s?-?\s?\d{1,2}\s?[\\/и]\s?[А-Яа-яA-Z]?[_\/]?Н?\s?-?\s?[А-Яа-яA-Z][_\/]?Н?$|[ ,(][А-Яа-яA-Z]{1}[_\/]?Н?\s?-?\s?[А-Яа-яA-Z]{0,1}[_\/]?Н?\s?[\\/и]\s?\d{,2}\s?-?\s?\d{1,2}|[ ,(][А-Яа-яA-Z]{1}[_\/]?Н?\s?-?\s?[А-Яа-яA-Z]{0,1}[_\/]?Н?\s?[\\/и]\s?\d{,2}\s?-?\s?\d{1,2}$'
 
     def __init__(self, nameTable : str, db: DB, test = False):
         self.nameTable = nameTable
@@ -48,7 +49,7 @@ class SRTDB(object):
     # Инициация полученных данных, валидация
     def dataInitiation(self, dictFields):
         errors = self.setFields(dictFields)
-        
+
         if 'actual_date' in self.data and type(self.data['actual_date']) == str:
             self.data['actual_date'] = None
         if 'result' in self.data:
@@ -136,7 +137,7 @@ class SRTDB(object):
                     ld = date[0].split('.')
                     result = f'{ld[2]}-{ld[1]}-{ld[0]}'
                 except Exception as e:
-                    return {'flag':True, 'error': f'Не корректная дата. Введите коррекную дату.\nОшибка: {e}'}
+                    return {'flag':True, 'error': f'\t{self.r}Не корректная дата. Введите коррекную дату.\nОшибка: {e}{self.r}'}
                 return {'flag':False, 'error': None, 'value':result}
             case _:
                 return {'flag':True, 'error': f'Не нашли тип {dataType[0]}'}
@@ -158,10 +159,12 @@ class SRTDB(object):
 
         id = self.db.selectCell(self.nameTable,{'columns':['id'],'where':where})
         self.getAMan()
+
         # self.printField()
         # exit('class SRTDB: checkAndWriteToTheDB()')
+        # Если запись отсутствует, заносится новая звпись
 
-        if id == None :                         # Если запись отсутствует, заносится новая звпись
+        if id == None :
             self.processTheNameColumn()
             self.getCode()
             if self.test:
@@ -174,8 +177,9 @@ class SRTDB(object):
             id = self.db.insert(self.nameTable,[list(self.data.keys()),[list(self.data.values()),]], test = self.test)
 
         return id
+
     def bringingTheDataToTheCorrectFormat(self):
-        print('\t======= def bringingTheDataToTheCorrectFormat =======')
+        print(f'\t{self.r} def bringingTheDataToTheCorrectFormat {self.r}')
         for key, value in self.data.items():
             if type(value) == datetime.datetime:
                 self.data[key] = str(value)[:10]
@@ -188,7 +192,7 @@ class SRTDB(object):
 
     def getAxes(self):
         result = []
-        temp = re.sub(r'[МM]+[/\]+[HН]+','М_Н',str(self.temp.replace('_','/'))).replace('по оси','/')
+        temp = re.sub(r'[МM]{1}(\\|\/)[HН]{1}','М_Н',str(self.temp.replace('_','/'))).replace('по оси','/')
         tempLst = []
         for mat in self.axesMatList:
             tmp = self.clearList(re.findall(mat, temp))
@@ -199,22 +203,33 @@ class SRTDB(object):
         temp = []
         if len(result) == 0:            # Если не нашли оси можно ввести оси вручную
             print('getAxes -> len(result) == 0')
-            result = self.clearAxes(self.inputAxes())
+            result = self.inputAxes()
             # pass
         if len(result) > 0:
             print('getAxes -> len(result) > 0')
             for i in result:
-                temp.append(self.sortAxes(i.split('/')))
+                try:
+                    temp.append(self.sortAxes(i.split('/')))
+                except Exception as e:
+                    print(f'getAxes -> Exception: {e}\n{i}')
         dlt = self.axesMatList + [r'в\s?/\s?о', 'в осях', r',{2,}', r'\s[.;,]',r'[.;,]{2,}' , 'между осями']
+        # print(self.temp)
         for mat in dlt:
             self.temp = re.sub(mat,'', self.temp)
         self.temp = self.removeDubleSpaces(self.temp)
+        # print(self.temp)
+        # print(temp)
+        # exit('print(temp)')
         return temp
 
     def inputAxes(self):
         print(self.temp)
         inp = None
-        zone_list = self.db.selectAll('map',{'columns':['zone'],'test':True})
+        listZone = self.db.selectAll('map',{'columns':['zone'],'test':True})
+        for temp in listZone:
+            if temp['zone'] not in self.zone_list:
+                self.zone_list.append(rf'{temp["zone"]}')
+
         for key in self.zone_list:
             temp = re.findall(key, self.temp)
             if len(temp) > 0:
@@ -226,37 +241,42 @@ class SRTDB(object):
                         self.checkInpitAxes(axe)
                 break
         if inp == None:
-            inp = input('Введите обозначене осей: ')
+            print(f'Для записи:"{self.temp}" Строка: \nВведите обозначене осей: ')
+            inp = self.checkInpitAxes(self.temp)
+        if type(inp) == list:
+            return inp
         result = []
         if inp != '':
             inp = inp.upper()
             f = self.removeSpaces(inp).split(';')
             for i in f:
-                i = re.sub(r'[МM]+/[HН]+','М_Н',i.replace('\\','/'))
+                i = re.sub(r'[МM]/[HН]','М_Н',i.replace('\\','/'))
                 result.append(i)
         return result
 
     def checkInpitAxes(self, axe):
-        
+
         flag = True
         print('\nВведите оси из ниже предоставленной записи в формате Ч-Ч/Б-Б, где Ч - это число от 1 до 37, Б - это буква от А до Я иди М/Н\n\tЕсли осей несколько введите их последовательно разделяя знаком ";"')
         error = 'Введите'
         please = '\nПожалуйста, снова введите данные.'
         while flag:
             count = input(f'{error} количество вводимых записей: ')
+            if count == "":
+                return []
             try:
                 count = int(count) if count != '' else 0
                 if count > 50 or count < 0:
-                    error = 'Количество должно быть в диапазоне от 0 до 50 шт.' + please
+                    error = f'Количество должно быть в диапазоне от 0 до 50 шт. {please}'
                 else:
                     count += 1
                     flag = False
             except:
-                error = 'Не удалось определить количество вводимых записей.' + please
+                error = f'{self.r} checkInpitAxes Не удалось определить количество вводимых записей. {please} {self.r}' 
         errorStr = ''
         result = []
         for i in range(1, count):
-            textInput = input(f'\n{errorStr}Введите через точку с запятой (;) значение зоны {i} (если не соответствует {axe}) и обозначение осей: ')
+            textInput = input(f'\n{errorStr}Введите через точку с запятой (;) значение зоны {i} (если не соответствует\n<<{axe}>>\n) и обозначение осей: ')
             if textInput == '':
                 break
             if ';' in textInput:
@@ -312,7 +332,7 @@ class SRTDB(object):
                 try:
                     boolean = slst[0] > slst[1]
                 except Exception as e:
-                    print('\n\t\t\tERROR!\ndef sortAxes\n',e,f'\n{slst}\n')
+                    print(f'\n\t{self.r} sortAxes ERROR! {self.r}\ndef sortAxes\n{e}\n{slst}\n')
                     self.printField()
                     exit("sortAxes(self, lst:list)")
                 if boolean:
@@ -350,7 +370,7 @@ class SRTDB(object):
                 try:
                     end = end.replace(result['journal'], '')
                 except Exception as e:
-                    print(result['journal'])
+                    print(f'\t{self.r} getCode {result["journal"]} {self.r}')
                     self.printField()
             elif len(pr1) > 1:
                 result['journal'] = []
@@ -405,7 +425,10 @@ class SRTDB(object):
 
         tmp = []
         if data['code'] != None:
-            codeTemp = data['code'].replace('001_12','001/12').replace('001-12','001/12')
+            lst = ['001_12','001-12']
+            big_regex = re.compile('|'.join(map(re.escape, lst)))
+            codeTemp = big_regex.sub('001/12', data['code'])
+            # codeTemp = data['code'].replace('001_12','001/12').replace('001-12','001/12')
             tmp.append(codeTemp)
         if type(data['journal']) == list:
             for d in data['journal']:
@@ -418,11 +441,11 @@ class SRTDB(object):
         tempID = []
 
         for x in COP:
-            where = '`code` = "'+ x +'"'
+            where = f'`code` = "{x}"'
             try:
                 id = self.db.selectCell('code',{'where':[where],'columns':['id']})
             except Exception as e:
-                print('\t\tERROR!!!', e)
+                print(f'\t\{self.r} getIDCode ERROR!!! {e} {self.r}')
 
             if id == None:
                 Values =[x]
@@ -438,7 +461,7 @@ class SRTDB(object):
                 try:
                     id = self.db.insert('code',[Keys,[Values]])
                 except Exception as e:
-                    print('\t\tERROR!!!', e)
+                    print(f'\t{self.r} getIDCode ERROR!!! {e} {self.r}')
 
             tempID.append(id)
 
@@ -517,7 +540,7 @@ class SRTDB(object):
         try:
             id = self.db.selectCell('dimension',{'columns':['id'], 'where':['`name` = "' + listDimension[0] + '"',]})
         except Exception as e:
-            print('\t\tERROR!!!', e)
+            print(f'\t{self.r} getDimension ERROR!!! {e} {self.r}')
         if id == None or id == False:
             match = re.search(r'\d?', temp)
             print(match[0], temp)
@@ -525,7 +548,7 @@ class SRTDB(object):
             try:
                 id = self.db.insert('dimension', [['name','multiplicity'],[[temp, multiplicity]]])
             except Exception as e:
-                print('getDimension -> \t\tERROR!!!', e)
+                print(f'{self.r} getDimension ERROR!!! {e} {self.r}')
         self.data['dimension'] = id
         if len(listDimension) > 1:
             listValue = str(self.data['value']).replace(',','.').split('/')
@@ -569,7 +592,7 @@ class SRTDB(object):
                 try:
                     self.data[k] = self.db.selectCell('people', {'columns':['id'], 'where': [' LOWER(`l_name`) = "' + tmp + '"']})
                 except Exception as e:
-                    print('\t\tERROR!!!', e)
+                    print(f'\t{self.r} def getAMan ERROR!!! {e} {self.r}')
                 if k == 'id_CC_engineer':
                     continue
                 key = k + '_company'
@@ -577,7 +600,7 @@ class SRTDB(object):
                     try:
                         self.data[key] = self.db.selectCell('contractor', {'columns':['id'], 'where': [' LOWER(`name`) = "' + temp[1] + '"']}) # .replace(gap, ' ')
                     except Exception as e:
-                        print('\t\tERROR!!!', e)
+                        print(f'\t{self.r} def getAMan ERROR!!! {e} {self.r}')
                 if self.data[key] != None:
                     continue
                 tmp = self.inputPeople(k, temp)
@@ -642,7 +665,7 @@ class SRTDB(object):
         try:
             listFor = self.db.getListColumns(self.nameTable)
         except Exception as e:
-            print('\t\tERROR!!!', e)
+            print(f'\t{self.r} def getFields ERROR!!! {e} {self.r}')
         for name in listFor:
             lst.append(name[0])
         return lst
