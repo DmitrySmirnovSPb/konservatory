@@ -56,7 +56,7 @@ class CC_Report(getContent):
 #----------------------------------------------------------------------------------------#
 #
         for row in self.Content:
-                
+
             for column in self.Content[row]:
                 self.getReselt(row,column)
                 if self.Content[row][column] == None: temp = ''
