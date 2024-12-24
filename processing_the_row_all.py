@@ -59,8 +59,8 @@ if __name__ == '__main__':
     }
 
     for row in ccav.Content:
-        if row < 5: continue #5  16276
-        print(row)
+        if row < 19280: continue #5  16276
+        # print(row)
 
         # if row > 35: break
         # # Объявление словаря для строки, занесение значений из строки файла по адресу link
@@ -69,7 +69,7 @@ if __name__ == '__main__':
             data[key] = ccav.Content[row][column]
         data['in_the_chart'] = True if ccav.Content[row][5] == '+' else False
 
-        srtdb.dataInitiation(data)
+        srtdb.dataInitiation(data, row)
 
         # exit(0)
 

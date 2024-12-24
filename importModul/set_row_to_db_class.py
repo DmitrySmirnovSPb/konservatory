@@ -47,9 +47,9 @@ class SRTDB(object):
         return error
 
     # Инициация полученных данных, валидация
-    def dataInitiation(self, dictFields):
+    def dataInitiation(self, dictFields, row = 0):
         errors = self.setFields(dictFields)
-
+        self.row = row
         if 'actual_date' in self.data and type(self.data['actual_date']) == str:
             self.data['actual_date'] = None
         if 'result' in self.data:
@@ -179,7 +179,7 @@ class SRTDB(object):
         return id
 
     def bringingTheDataToTheCorrectFormat(self):
-        print(f'\t{self.r} def bringingTheDataToTheCorrectFormat {self.r}')
+        # print(f'\t{self.r} def bringingTheDataToTheCorrectFormat {self.r}')
         for key, value in self.data.items():
             if type(value) == datetime.datetime:
                 self.data[key] = str(value)[:10]
@@ -202,11 +202,11 @@ class SRTDB(object):
         result = self.clearAxes(tempLst)
         temp = []
         if len(result) == 0:            # Если не нашли оси можно ввести оси вручную
-            print('getAxes -> len(result) == 0')
+            # print('getAxes -> len(result) == 0')
             result = self.inputAxes()
             # pass
         if len(result) > 0:
-            print('getAxes -> len(result) > 0')
+            # print('getAxes -> len(result) > 0')
             for i in result:
                 try:
                     temp.append(self.sortAxes(i.split('/')))
@@ -241,7 +241,7 @@ class SRTDB(object):
                         self.checkInpitAxes(axe)
                 break
         if inp == None:
-            print(f'Для записи:"{self.temp}" Строка: \nВведите обозначене осей: ')
+            print(f'Строка: {self.row}\nДля записи:\n"{self.temp}"')
             inp = self.checkInpitAxes(self.temp)
         if type(inp) == list:
             return inp
@@ -257,7 +257,7 @@ class SRTDB(object):
     def checkInpitAxes(self, axe):
 
         flag = True
-        print('\nВведите оси из ниже предоставленной записи в формате Ч-Ч/Б-Б, где Ч - это число от 1 до 37, Б - это буква от А до Я иди М/Н\n\tЕсли осей несколько введите их последовательно разделяя знаком ";"')
+        print('Введите оси из ниже предоставленной записи в формате Ч-Ч/Б-Б, где Ч - это число от 1 до 37, Б - это буква от А до Я или М/Н\n\tЕсли осей несколько введите их последовательно разделяя знаком ";"')
         error = 'Введите'
         please = '\nПожалуйста, снова введите данные.'
         while flag:

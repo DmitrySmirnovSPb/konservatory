@@ -88,3 +88,7 @@ class Report(object):
             return result if len(result) > 0 else None
         else:
             return None
+    
+    def printFields(self):
+        for field in vars(self):
+            print(field, '-->',getattr(self, field))

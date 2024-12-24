@@ -185,3 +185,7 @@ class CC_Report(getContent):
             setattr(self, key, int(self.Content[row][column+1]))
         except:
             return
+    
+    def printFields(self):
+        for field in vars(self):
+            print(field, '-->',getattr(self, field))
