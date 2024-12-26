@@ -1,12 +1,13 @@
 from openpyxl import load_workbook, Workbook
-from openpyxl.styles import Font, Color, numbers
+from openpyxl.styles import Font, Color, numbers,PatternFill, Border, Side, Alignment, GradientFill
 
 
 class Excel(object):
 
     def __init__(self, link: str):
+        self.link = link
         try:
-            self.wb = load_workbook(link)
+            self.wb = load_workbook(self.link)
             self.error = None
         except AttributeError as e:
             print()
@@ -68,3 +69,15 @@ class Excel(object):
         while '  ' in string:
             string = string.replace('  ',' ')
         return string.strip()
+# Добавить новую строку после последней сужествующей
+    def addALine(self, data: dict):
+        self.Sheet.append(data)
+# Добавить новые строки в конец файла
+    def addALines(self, data):
+        for line in data:
+            self.addALine(line)
+# Записать в файл
+    def saveFile(self, link = False):
+        if link == False:
+            link = self.link
+        self.wb.save(link)
