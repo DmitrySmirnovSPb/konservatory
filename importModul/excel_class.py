@@ -75,7 +75,7 @@ class Excel(object):
 # Добавить новые строки в конец файла
     def addALines(self, data):
         for line in data:
-            self.addALine(line)
+            self.addALine(data[line])
 # Записать в файл
     def saveFile(self, link = False):
         if link == False:

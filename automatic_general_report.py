@@ -15,7 +15,7 @@ if __name__ == '__main__':
     startRow = 5 # Начальная строка данных в файле. agr.maxRow - последняя строка данных в файле.
 
     data = {
-        1:1,
+        1:{1:1,
         2:1,
         3:'12.2023 - 5845',
         4:1,
@@ -36,8 +36,9 @@ if __name__ == '__main__':
         19:'',
         20:'',
         21:'Тарасов Денис Александрович',
-        22:''
+        22:''},
     }
+    
     match = r'^Отчет №\d*.*\.xlsx$'
     listick = ['columnNumber',          # Столбец с номером по порядку в отчёте
         'columnName',                   # Столбец с названием работ и материалов
@@ -66,8 +67,8 @@ if __name__ == '__main__':
         6:'number_in_order',
         7:'columnName',
         8:'roomNumbers',
-        9:'axes',
-        10:'floor',
+        9:'',
+        10:'',
         11:'',
         12:'unitOfMeasurement',
         13:'countColumn',
@@ -82,7 +83,7 @@ if __name__ == '__main__':
         22:''
     }
     for year in range(start, finish + 1):
-    # Загружаем по новой automatic general report.xlsx
+        # Загружаем по новой automatic ***general report.xlsx***
         agr = Excel(target)
         agr.initSheet('отчёт')
 
@@ -105,9 +106,16 @@ if __name__ == '__main__':
             scheduledCall = True            # Вызов по графику
 
             gc = CC_Report(link = item, globalLink = path, Sheet = 'Отчёт', nameDB = 'polytechstroy')
+            print(int(str(gc.date)[:4]))
             if gc.number in listReport and year == int(str(gc.date)[:4]):
                 continue # Если отчет есть в файле (automatic general report.xlsx), то переходим к следующему отчёту
             numberReport = gc.number # 4 (D) - Номер отчёта
+            for row in range(gc.startRow,gc.end):
+                agr.addALine(gc.Content[row])
+                print(gc.Content[row])
+            break
+            
+            agr.saveFile()
 
             exit(item)
 
