@@ -27,7 +27,7 @@ class Report(object):
             except:
                 self.data[fild] = None
                 self.error.append(fild)
-                
+
         self.db = DB()
         self.table = 'report'
 
@@ -60,7 +60,7 @@ class Report(object):
                 print(field, '-->',getattr(self, field))
             exit("class Report:makingAnEntry()")
         return id
-    
+
     def update(self, id:int):               # Изменение записи с ID = id в базе данных
 
         dataUpdate = dict()
@@ -88,7 +88,7 @@ class Report(object):
             return result if len(result) > 0 else None
         else:
             return None
-    
+
     def printFields(self):
         for field in vars(self):
             print(field, '-->',getattr(self, field))
