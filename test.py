@@ -11,7 +11,7 @@ if __name__ == '__main__':
     match = r'^\d\d ЗАЯВКА на вызов заказчика.*\.xlsx$'
 
     start = 23
-    finish =24
+    finish =25
     theMainLink = '\\\\srv-fs-02.stroy.local\\Shares\\Консерватория\\21. Строительный контроль\\Графики вызова Заказчика\\'
 
     for year in range(start, finish + 1):
