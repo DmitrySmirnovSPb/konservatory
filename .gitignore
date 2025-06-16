@@ -13,3 +13,4 @@ data/people.xlsx
 /output.json
 /singleton.py
 /test_DB.py
+/rename.py
